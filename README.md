@@ -2,7 +2,7 @@
 
 ![Scaffold](https://github.com/cleancoders/c3kit/blob/master/img/scaffold_200.png?raw=true)
 
-A Clojure library component of [c3kit - Clean Coders Clojure Kit](https://github.com/cleancoders/c3kit).
+A library component of [c3kit - Clean Coders Clojure Kit](https://github.com/cleancoders/c3kit).
 
 _"Truth forever on the scaffold, Wrong forever on the throne,—
 Yet that scaffold sways the future"_ - James Russell Lowell
