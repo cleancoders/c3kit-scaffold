@@ -1,6 +1,6 @@
 {
  ; :env-keys ["property.name" "ENV_NAME"] ; default: ["c3.env" "C3_ENV"]
- :run-cmd "phantomjs resources/public/specs/speclj.js"
+ :run-cmd "node resources/public/specs/speclj.js"
  :development {:cache-analysis true
                :libs           ["src/js/"]
                :optimizations  :none

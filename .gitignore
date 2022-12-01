@@ -4,5 +4,8 @@
 /lib
 /target
 .cpcache
+.idea
+node_modules
 .specljs-timestamp
+package-lock.json
 *.iml
