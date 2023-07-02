@@ -1,7 +1,7 @@
 {
  :paths   ["src"]
  :deps    {
-           com.cleancoders.c3kit/apron {:git/url "https://github.com/cleancoders/c3kit-apron.git" :git/sha "8cf34a91b648188beef3730817096f61416c348d"}
+           com.cleancoders.c3kit/apron {:git/url "https://github.com/cleancoders/c3kit-apron.git" :git/sha "1d6d20a86b142080d71020a322d33b3a30869117"}
            garden/garden               {:mvn/version "1.3.10"}
            org.clojure/clojure         {:mvn/version "1.11.1"}
            org.clojure/tools.namespace {:mvn/version "1.3.0"}
@@ -9,7 +9,7 @@
  :aliases {
            :test {:extra-deps    {
                                   org.clojure/clojurescript {:mvn/version "1.11.60"}
-                                  speclj/speclj             {:mvn/version "3.4.1"}
+                                  speclj/speclj             {:mvn/version "3.4.3"}
                                   }
                   :override-deps {com.cleancoders.c3kit/apron {:local/root "../apron"}}
                   :extra-paths   ["resources" "spec"]}
