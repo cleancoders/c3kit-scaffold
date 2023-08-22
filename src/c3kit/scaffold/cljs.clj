@@ -16,6 +16,7 @@
 (defonce run-env (atom {}))
 (defonce ns-prefix (atom nil))
 (defonce ignore-errors (atom []))
+(defonce ignore-consoles (atom []))
 
 (deftype FnConsumer [accept-fn]
   Consumer
@@ -81,7 +82,7 @@
         js       (str "runSpecsFiltered(" (utilc/->json spec-map) ")")]
     (if (seq spec-map)
       (do (println "Only running affected specs:")
-          (doseq [ns (keys spec-map)] (println "  " ns))
+          (doseq [ns (sort (keys spec-map))] (println "  " ns))
           (.evaluate page js))
       (println "No specs affected. Skipping run."))
     (timestamp!)))
@@ -98,8 +99,10 @@
     (println "ERROR:" error)))
 
 (defn on-console [m]
-  (let [^ConsoleMessage message m]
-    (println (.text message))))
+  (let [^ConsoleMessage message m
+        text                    (.text message)]
+    (when-not (some #(re-find % text) @ignore-consoles)
+      (println text))))
 
 (defn run-specs [auto?]
   (let [playwright (Playwright/create)
@@ -118,7 +121,6 @@
   ;; MDM - Touch the js output file so the browser will reload it without hard refresh.
   (timestamp! (io/file (:output-to @build-config)))
   (run-specs true))
-
 
 (deftype Sources [build-options]
   Inputs
@@ -154,6 +156,7 @@
     (when-let [env (:run-env config)] (reset! run-env env))
     (reset! ns-prefix (:ns-prefix config "i.forgot.to.add.ns-prefix.to.cljs.edn"))
     (reset! ignore-errors (map re-pattern (:ignore-errors config [])))
+    (reset! ignore-consoles (map re-pattern (:ignore-console config [])))
     (reset! build-config (resolve-watch-fn (get config build-key)))
     (assert (#{"once" "auto" "spec"} command) (str "Unrecognized build command: " command ". Must be 'once', 'auto', or 'spec'"))
     (when-not (= "spec" command)
@@ -163,5 +166,7 @@
     (cond (= "once" command) (do (api/build (Sources. @build-config) @build-config)
                                  (when (:specs @build-config) (run-specs false)))
           (= "spec" command) (run-specs false)
-          :else (do (println "watching namespaces with prefix:" @ns-prefix)
-                    (auto-run @build-config)))))
+          :else (let [timestamp (timestamp-file)]
+                  (println "watching namespaces with prefix:" @ns-prefix)
+                  (when (.exists timestamp) (.delete timestamp))
+                  (auto-run @build-config)))))
