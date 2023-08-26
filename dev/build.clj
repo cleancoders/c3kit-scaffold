@@ -1,6 +1,7 @@
 (ns build
   (:require [clojure.string :as str]
             [clojure.tools.build.api :as b]
+            [clojure.java.shell :as shell]
             [cemerick.pomegranate.aether :as aether]))
 
 (def lib-name "scaffold")
@@ -31,7 +32,17 @@
   (b/jar {:class-dir class-dir
           :jar-file jar-file}))
 
+(defn tag [_]
+  (let [clean? (str/blank? (:out (shell/sh "git" "diff")))
+        tags   (delay (->> (shell/sh "git" "tag") :out str/split-lines set))]
+    (cond (not clean?) (do (println "ABORT: commit master before tagging") (System/exit 1))
+          (contains? @tags version) (println "tag already exists")
+          :else (do (println "pushing tag" version)
+                    (shell/sh "git" "tag" version)
+                    (shell/sh "git" "push" "--tags")))))
+
 (defn deploy [_]
+  (tag nil)
   (jar nil)
   (aether/deploy {:coordinates [lib version]
                   :jar-file jar-file
