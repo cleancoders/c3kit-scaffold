@@ -25,7 +25,7 @@
 (defn spec-html-url []
   (let [output-dir     (:output-dir @build-config)
         spec-html-file (io/file output-dir "specs.html")
-        js-file        (str (.toURL (io/file (:output-to @build-config))))]
+        js-file        (str (.toURL (.toURI (io/file (:output-to @build-config)))))]
     (when-not (.exists spec-html-file)
       (let [html (-> (slurp (io/resource "c3kit/scaffold/specs.html"))
                      (str/replace "<--OUTPUT-TO-->" js-file))]
