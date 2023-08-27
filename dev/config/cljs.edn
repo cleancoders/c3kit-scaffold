@@ -1,7 +1,10 @@
 {
- ; :env-keys ["property.name" "ENV_NAME"] ; default: ["c3.env" "C3_ENV"]
- :ns-prefix "c3kit.scaffold"  ;; only namespaces with these prefix will trigger recompile
- :ignore-errors [".*goog/i18n/bidi.js"]
+ :ns-prefix "c3kit.scaffold"  ;; required - only namespaces with these prefix will trigger recompile
+ ; :env-keys ["property.name" "ENV_NAME"] ;; optional - environment keys for the environment (development, production, ...) default: ["c3.env" "C3_ENV"]
+ :ignore-errors [".*goog/i18n/bidi.js"] ;; optional - any error message matching any of these regex strings will be ignored
+ :ignore-console [] ;; optional - any console messages matching any of these regex strings will be ignored
+
+ ;; Build configuration for each environment, mostly ClojureScript compiler options: https://clojurescript.org/reference/compiler-options
  :development {:cache-analysis true
                :libs           ["src/js/"]
                :optimizations  :none
@@ -10,9 +13,9 @@
                :pretty-print   true
                :source-map     true
                :sources        ["spec" "src"]
-               :specs          true
+               :specs          true                                   ;; Run speclj specs after compile
                :verbose        false
-               :watch-fn       c3kit.scaffold.cljs/on-dev-compiled
+               :watch-fn       c3kit.scaffold.cljs/on-dev-compiled    ;; Callback to run speclj specs after each compile when in auto mode
                }
  :production  {
                :cache-analysis false

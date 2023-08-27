@@ -1,7 +1,9 @@
 {
- :source-dir  "spec/c3kit/scaffold/css"
- :var          c3kit.scaffold.css.sample/screen
- :output-file "target/css/c3kit_scaffold.css"
- :flags       {:pretty-print? true
-               :vendors       ["webkit" "moz" "o"]}
+ :source-dir  "spec/c3kit/scaffold/css"             ;; location of garden clj code
+ :var          c3kit.scaffold.css.sample/screen     ;; the root var that holds all the garden to compile
+ :output-file "target/css/c3kit_scaffold.css"       ;; where you want the css to go
+ :flags       {
+               :pretty-print? true                  ;; make the css pretty?
+               :vendors       ["webkit" "moz" "o"]  ;; target browsers for css extensions
+               }
  }
