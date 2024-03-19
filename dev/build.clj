@@ -1,8 +1,8 @@
 (ns build
-  (:require [clojure.string :as str]
-            [clojure.tools.build.api :as b]
+  (:require [cemerick.pomegranate.aether :as aether]
             [clojure.java.shell :as shell]
-            [cemerick.pomegranate.aether :as aether]))
+            [clojure.string :as str]
+            [clojure.tools.build.api :as b]))
 
 (def lib-name "scaffold")
 (def group-name "com.cleancoders.c3kit")
@@ -24,20 +24,20 @@
 
 (defn pom [_]
   (println "writing pom.xml")
-  (b/write-pom {:basis basis
+  (b/write-pom {:basis     basis
                 :class-dir class-dir
-                :lib lib
-                :version version
+                :lib       lib
+                :version   version
                 :pom-data  pom-template}))
 
 (defn jar [_]
   (clean nil)
   (pom nil)
   (println "building" jar-file)
-  (b/copy-dir {:src-dirs src-dirs
+  (b/copy-dir {:src-dirs   src-dirs
                :target-dir class-dir})
   (b/jar {:class-dir class-dir
-          :jar-file jar-file}))
+          :jar-file  jar-file}))
 
 (defn tag [_]
   (let [clean? (str/blank? (:out (shell/sh "git" "diff")))
@@ -51,11 +51,11 @@
 (defn deploy [_]
   (tag nil)
   (jar nil)
-  (aether/deploy {:coordinates [lib version]
-                  :jar-file jar-file
+  (aether/deploy {:coordinates       [lib version]
+                  :jar-file          jar-file
                   :pom-file          (str/join "/" [class-dir "META-INF/maven" group-name lib-name "pom.xml"])
-                  :repository {"clojars" {:url "https://clojars.org/repo"
-                                          :username (System/getenv "CLOJARS_USERNAME")
-                                          :password (System/getenv "CLOJARS_PASSWORD")}}
+                  :repository        {"clojars" {:url      "https://clojars.org/repo"
+                                                 :username (System/getenv "CLOJARS_USERNAME")
+                                                 :password (System/getenv "CLOJARS_PASSWORD")}}
                   :transfer-listener :stdout}))
 
