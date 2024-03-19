@@ -11,7 +11,7 @@
            :test  {:extra-deps  {
                                  org.clojure/clojurescript     {:mvn/version "1.11.60"}
                                  speclj/speclj                 {:mvn/version "3.4.3"}
-                                 io.github.clojure/tools.build {:mvn/version "0.9.5"}
+                                 io.github.clojure/tools.build {:mvn/version "0.9.6"}
                                  clj-commons/pomegranate       {:mvn/version "1.2.23"}
                                  }
                    ;:override-deps {com.cleancoders.c3kit/apron {:local/root "../apron"}}
@@ -20,7 +20,7 @@
            :spec  {:main-opts ["-m" "speclj.main" "-c"]}
            :cljs  {:main-opts ["-m" "c3kit.scaffold.cljs"]}
            :css   {:main-opts ["-m" "c3kit.scaffold.css"]}
-           :build {:extra-deps  {io.github.clojure/tools.build {:mvn/version "0.9.5"}
+           :build {:extra-deps  {io.github.clojure/tools.build {:mvn/version "0.9.6"}
                                  clj-commons/pomegranate       {:mvn/version "1.2.23"}}
                    :ns-default  build
                    :extra-paths ["dev"]}
