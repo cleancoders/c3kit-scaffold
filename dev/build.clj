@@ -12,13 +12,13 @@
 (def version (str/trim (slurp "VERSION")))
 (def class-dir "target/classes")
 (def jar-file (format "target/%s-%s.jar" lib-name version))
-(def deploy-config {:coordinates       [lib version]
-                    :jar-file          jar-file
-                    :pom-file          (str/join "/" [class-dir "META-INF/maven" group-name lib-name "pom.xml"])
-                    :repository        {"clojars" {:url      "https://clojars.org/repo"
-                                                   :username (System/getenv "CLOJARS_USERNAME")
-                                                   :password (System/getenv "CLOJARS_PASSWORD")}}
-                    :transfer-listener :stdout})
+(def deploy-config (delay {:coordinates       [lib version]
+                           :jar-file          jar-file
+                           :pom-file          (str/join "/" [class-dir "META-INF/maven" group-name lib-name "pom.xml"])
+                           :repository        {"clojars" {:url      "https://clojars.org/repo"
+                                                          :username (System/getenv "CLOJARS_USERNAME")
+                                                          :password (System/getenv "CLOJARS_PASSWORD")}}
+                           :transfer-listener :stdout}))
 
 (defn clean [_]
   (println "cleaning")
