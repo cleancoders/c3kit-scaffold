@@ -12,6 +12,11 @@
 (def version (str/trim (slurp "VERSION")))
 (def class-dir "target/classes")
 (def jar-file (format "target/%s-%s.jar" lib-name version))
+(def pom-template
+  [[:licenses
+    [:license
+     [:name "MIT License"]
+     [:url "https://github.com/cleancoders/c3kit-scaffold/blob/master/LICENSE"]]]])
 
 (defn clean [_]
   (println "cleaning")
@@ -22,7 +27,8 @@
   (b/write-pom {:basis basis
                 :class-dir class-dir
                 :lib lib
-                :version version}))
+                :version version
+                :pom-data  pom-template}))
 
 (defn jar [_]
   (clean nil)
