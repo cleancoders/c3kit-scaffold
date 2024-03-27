@@ -17,7 +17,6 @@
 (defonce ns-prefix (atom nil))
 (defonce ignore-errors (atom []))
 (defonce ignore-consoles (atom []))
-(defonce browser (atom nil))
 
 (deftype FnConsumer [accept-fn]
   Consumer
@@ -106,14 +105,18 @@
       (println text))))
 
 (defn run-specs [auto?]
-  (let [context    (.newContext @browser)
+  (let [playwright (Playwright/create)
+        chrome     (.chromium playwright)
+        browser    (.launch chrome)
+        context    (.newContext browser)
         page       (.newPage context)]
     (.onPageError page (FnConsumer. on-error))
     (.onConsoleMessage page (FnConsumer. on-console))
     (.navigate page (spec-html-url))
     (if auto?
       (run-specs-auto page)
-      (run-specs-once page))))
+      (run-specs-once page))
+    (.close browser)))
 
 (defn on-dev-compiled []
   ;; MDM - Touch the js output file so the browser will reload it without hard refresh.
@@ -156,7 +159,6 @@
     (reset! ignore-errors (map re-pattern (:ignore-errors config [])))
     (reset! ignore-consoles (map re-pattern (:ignore-console config [])))
     (reset! build-config (resolve-watch-fn (get config build-key)))
-    (reset! browser (-> (Playwright/create) .chromium .launch))
     (assert (#{"once" "auto" "spec"} command) (str "Unrecognized build command: " command ". Must be 'once', 'auto', or 'spec'"))
     (when-not (= "spec" command)
       (println "Compiling ClojureScript:" command build-key)
