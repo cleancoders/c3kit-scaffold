@@ -17,6 +17,7 @@
 (defonce ns-prefix (atom nil))
 (defonce ignore-errors (atom []))
 (defonce ignore-consoles (atom []))
+(defonce browser (atom nil))
 
 (deftype FnConsumer [accept-fn]
   Consumer
@@ -105,10 +106,7 @@
       (println text))))
 
 (defn run-specs [auto?]
-  (let [playwright (Playwright/create)
-        chrome     (.chromium playwright)
-        browser    (.launch chrome)
-        context    (.newContext browser)
+  (let [context    (.newContext @browser)
         page       (.newPage context)]
     (.onPageError page (FnConsumer. on-error))
     (.onConsoleMessage page (FnConsumer. on-console))
@@ -158,6 +156,7 @@
     (reset! ignore-errors (map re-pattern (:ignore-errors config [])))
     (reset! ignore-consoles (map re-pattern (:ignore-console config [])))
     (reset! build-config (resolve-watch-fn (get config build-key)))
+    (reset! browser (-> (Playwright/create) .chromium .launch))
     (assert (#{"once" "auto" "spec"} command) (str "Unrecognized build command: " command ". Must be 'once', 'auto', or 'spec'"))
     (when-not (= "spec" command)
       (println "Compiling ClojureScript:" command build-key)
