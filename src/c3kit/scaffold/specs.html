@@ -18,16 +18,13 @@
         .forEach(goog.require)
     }
 
-    runSpecsConfigured = function (color, reporter) {
+    runSpecsConfigured = function () {
       speclj.run.standard.arm()
-      return speclj.run.standard.run_specs(
-        "color", color,
-        "reporters", [reporter]
-      )
+      return speclj.run.standard.run_specs(/*{SPEC-CONFIG}*/)
     }
 
     runSpecs = function () {
-      runSpecsConfigured(false, "documentation")
+      runSpecsConfigured()
     }
 
     runSpecsFiltered = function (affectedSpecs) {
@@ -35,7 +32,7 @@
         let runner = speclj.config.active_runner()
         speclj.running.filter_descriptions(runner, affectedSpecs)
       }
-      return runSpecsConfigured(true, "documentation")
+      return runSpecsConfigured()
     }
   </script>
 </head>

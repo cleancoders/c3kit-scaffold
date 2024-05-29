@@ -10,7 +10,15 @@
 (def config {:run-cmd     "command"
              :run-env     "environment"
              :env-keys    ["ENV" ".env"]
-             :development {:specs      true
+             :development {:output-dir "tmp"
+                           :output-to  "tmp/out.cljs"
+                           :specs      {:color     true
+                                        :reporters ["documentation"]
+                                        :tags      ["~one" "two"]}}
+             :defaults    {:specs      true
+                           :output-dir "tmp"
+                           :output-to  "tmp/out.cljs"}
+             :no-color    {:specs      {:color nil}
                            :output-dir "tmp"
                            :output-to  "tmp/out.cljs"}})
 
@@ -28,25 +36,57 @@
           (reset! sut/ignore-errors [])
           (reset! sut/ignore-consoles []))
 
-  (after (io/delete-file "tmp/out.cljs")
-         (io/delete-file "tmp/.specljs-timestamp"))
+  (after (io/delete-file "tmp/out.cljs" true)
+         (io/delete-file "tmp/.specljs-timestamp" true))
 
-  (it "on-dev-compiled - no timestamp file"
-    (sut/configure! config :development)
-    (sut/on-dev-compiled)
-    (should (.exists (io/file "tmp/out.cljs")))
-    (should (.exists (io/file "tmp/.specljs-timestamp")))
-    (should> (.lastModified (io/file "tmp/.specljs-timestamp")) 0)
-    (should-have-invoked :run-specs {:with [:auto? true :timestamp 0]}))
+  (context "build-spec-html"
 
-  (it "on-dev-compiled - timestamp file exists"
-    (sut/configure! config :development)
-    (let [ts-file (io/file "tmp/.specljs-timestamp")]
-      (spit ts-file "")
-      (.setLastModified ts-file 1234)
+    (it "writes javascript output path"
+      (sut/configure! config :development)
+      (let [html       (sut/build-spec-html)
+            js-path    (str (.toURL (.toURI (io/file "tmp/out.cljs"))))
+            script-tag (str "script src=\"" js-path "\"")]
+        (should-contain script-tag html)))
+
+    (it "writes spec config"
+      (sut/configure! config :development)
+      (let [html   (sut/build-spec-html)
+            config "run_specs(\"color\", true, \"reporters\", [\"documentation\"], \"tags\", [\"~one\",\"two\"])"]
+        (should-contain config html)))
+
+    (it "color is nil"
+      (sut/configure! config :no-color)
+      (let [html   (sut/build-spec-html)
+            config "run_specs(\"color\", null, \"reporters\", [\"documentation\"])"]
+        (should-contain config html)))
+
+    (it "defaults to color true and documentation reporter"
+      (sut/configure! config :defaults)
+      (let [html   (sut/build-spec-html)
+            config "run_specs(\"color\", true, \"reporters\", [\"documentation\"])"]
+        (should-contain config html)))
+
+    )
+
+  (context "on-dev-compiled"
+
+    (it "no timestamp file"
+      (sut/configure! config :development)
       (sut/on-dev-compiled)
-      (should-not= 1234 (.lastModified ts-file))
-      (should-have-invoked :run-specs {:with [:auto? true :timestamp 1234]})))
+      (should (.exists (io/file "tmp/out.cljs")))
+      (should (.exists (io/file "tmp/.specljs-timestamp")))
+      (should> (.lastModified (io/file "tmp/.specljs-timestamp")) 0)
+      (should-have-invoked :run-specs {:with [:auto? true :timestamp 0]}))
+
+    (it "timestamp file exists"
+      (sut/configure! config :development)
+      (let [ts-file (io/file "tmp/.specljs-timestamp")]
+        (spit ts-file "")
+        (.setLastModified ts-file 1234)
+        (sut/on-dev-compiled)
+        (should-not= 1234 (.lastModified ts-file))
+        (should-have-invoked :run-specs {:with [:auto? true :timestamp 1234]})))
+    )
 
   (context "main"
     (redefs-around [util/read-edn-resource (constantly config)

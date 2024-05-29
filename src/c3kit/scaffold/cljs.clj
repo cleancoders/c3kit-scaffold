@@ -22,17 +22,33 @@
   Consumer
   (accept [_this thing] (accept-fn thing)))
 
-(defn- build-spec-html [spec-html-file]
-  (let [js-file (str (.toURL (.toURI (io/file (:output-to @build-config)))))
-        html    (-> (slurp (io/resource "c3kit/scaffold/specs.html"))
-                    (str/replace "<--OUTPUT-TO-->" js-file))]
-    (spit spec-html-file html)))
+(def speclj-defaults
+  {:color     true
+   :reporters ["documentation"]})
+
+(defn config-with-defaults [config]
+  (cond-> speclj-defaults
+          (map? config)
+          (merge config)))
+
+(defn build-spec-config []
+  (->> (config-with-defaults (:specs @build-config))
+       (map (fn [[k v]] (str (utilc/->json k) ", " (utilc/->json v))))
+       (str/join ", ")))
+
+(defn build-js-path []
+  (str (.toURL (.toURI (io/file (:output-to @build-config))))))
+
+(defn build-spec-html []
+  (-> (slurp (io/resource "c3kit/scaffold/specs.html"))
+      (str/replace "<--OUTPUT-TO-->" (build-js-path))
+      (str/replace "/*{SPEC-CONFIG}*/" (build-spec-config))))
 
 (defn spec-html-url []
   (let [output-dir     (:output-dir @build-config)
         spec-html-file (io/file output-dir "specs.html")]
     (when-not (.exists spec-html-file)
-      (build-spec-html spec-html-file))
+      (spit spec-html-file (build-spec-html)))
     (str (.toURL spec-html-file))))
 
 (defn project-ns? [ns] (str/starts-with? ns @ns-prefix))
@@ -75,14 +91,17 @@
       (concat updated (rdeps-affected-by rdeps all-rdeps))
       updated)))
 
+(defn build-spec-map [rdeps deps timestamp]
+  (->> (find-updated-specs rdeps deps timestamp)
+       (rdeps-affected-by rdeps)
+       (filter #(str/ends-with? % "_spec"))
+       (map #(str/replace % "_" "-"))
+       (reduce #(assoc %1 %2 true) {})))
+
 (defn run-specs-auto [page timestamp]
   (let [deps     (.evaluate page "goog.debugLoader_")
         rdeps    (build-reverse-deps deps)
-        updated  (find-updated-specs rdeps deps timestamp)
-        affected (rdeps-affected-by rdeps updated)
-        spec-map (->> (filter #(str/ends-with? % "_spec") affected)
-                      (map #(str/replace % "_" "-"))
-                      (reduce #(assoc %1 %2 true) {}))
+        spec-map (build-spec-map rdeps deps timestamp)
         js       (str "runSpecsFiltered(" (utilc/->json spec-map) ")")]
     (if (seq spec-map)
       (do (println "Only running affected specs:")
