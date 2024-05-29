@@ -3,6 +3,7 @@
 /classes
 /lib
 /target
+/tmp
 .cpcache
 .idea
 node_modules

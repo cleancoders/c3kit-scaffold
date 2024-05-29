@@ -22,14 +22,17 @@
   Consumer
   (accept [_this thing] (accept-fn thing)))
 
+(defn- build-spec-html [spec-html-file]
+  (let [js-file (str (.toURL (.toURI (io/file (:output-to @build-config)))))
+        html    (-> (slurp (io/resource "c3kit/scaffold/specs.html"))
+                    (str/replace "<--OUTPUT-TO-->" js-file))]
+    (spit spec-html-file html)))
+
 (defn spec-html-url []
   (let [output-dir     (:output-dir @build-config)
-        spec-html-file (io/file output-dir "specs.html")
-        js-file        (str (.toURL (.toURI (io/file (:output-to @build-config)))))]
+        spec-html-file (io/file output-dir "specs.html")]
     (when-not (.exists spec-html-file)
-      (let [html (-> (slurp (io/resource "c3kit/scaffold/specs.html"))
-                     (str/replace "<--OUTPUT-TO-->" js-file))]
-        (spit spec-html-file html)))
+      (build-spec-html spec-html-file))
     (str (.toURL spec-html-file))))
 
 (defn project-ns? [ns] (str/starts-with? ns @ns-prefix))
@@ -50,19 +53,20 @@
   (let [output-dir (:output-dir @build-config)]
     (io/file output-dir ".specljs-timestamp")))
 
-(defn timestamp!
-  ([] (timestamp! (timestamp-file)))
-  ([file]
-   (if (.exists file)
-     (.setLastModified file (System/currentTimeMillis))
-     (spit file ""))))
+(defn timestamp! [file]
+  (if (.exists file)
+    (.setLastModified file (System/currentTimeMillis))
+    (spit file "")))
 
-(defn find-updated-specs [rdeps deps]
-  (let [^File time-file (timestamp-file)
-        min-millis      (if (.exists time-file) (.lastModified time-file) 0)
-        ns->file        (get deps "idToPath_")]
+(defn modified-time [file]
+  (if (.exists file)
+    (.lastModified file)
+    0))
+
+(defn find-updated-specs [rdeps deps timestamp]
+  (let [ns->file (get deps "idToPath_")]
     (filter (fn [ns] (let [mod-time (-> (get ns->file ns) URL. .toURI File. .lastModified)]
-                       (> mod-time min-millis)))
+                       (> mod-time timestamp)))
             (keys rdeps))))
 
 (defn rdeps-affected-by [rdeps updated]
@@ -71,10 +75,10 @@
       (concat updated (rdeps-affected-by rdeps all-rdeps))
       updated)))
 
-(defn run-specs-auto [page]
+(defn run-specs-auto [page timestamp]
   (let [deps     (.evaluate page "goog.debugLoader_")
         rdeps    (build-reverse-deps deps)
-        updated  (find-updated-specs rdeps deps)
+        updated  (find-updated-specs rdeps deps timestamp)
         affected (rdeps-affected-by rdeps updated)
         spec-map (->> (filter #(str/ends-with? % "_spec") affected)
                       (map #(str/replace % "_" "-"))
@@ -84,8 +88,7 @@
       (do (println "Only running affected specs:")
           (doseq [ns (sort (keys spec-map))] (println "  " ns))
           (.evaluate page js))
-      (println "No specs affected. Skipping run."))
-    (timestamp!)))
+      (println "No specs affected. Skipping run."))))
 
 (defn run-specs-once [page]
   (try
@@ -104,24 +107,28 @@
     (when-not (some #(re-find % text) @ignore-consoles)
       (println text))))
 
-(defn run-specs [auto?]
-  (let [playwright (Playwright/create)
-        chrome     (.chromium playwright)
-        browser    (.launch chrome)
-        context    (.newContext browser)
-        page       (.newPage context)]
+(defn run-specs [& {:keys [timestamp auto?]}]
+  (let [browser (-> (Playwright/create)
+                    (.chromium)
+                    (.launch))
+        page    (-> browser
+                    (.newContext)
+                    (.newPage))]
     (.onPageError page (FnConsumer. on-error))
     (.onConsoleMessage page (FnConsumer. on-console))
     (.navigate page (spec-html-url))
     (if auto?
-      (run-specs-auto page)
+      (run-specs-auto page timestamp)
       (run-specs-once page))
     (.close browser)))
 
 (defn on-dev-compiled []
-  ;; MDM - Touch the js output file so the browser will reload it without hard refresh.
-  (timestamp! (io/file (:output-to @build-config)))
-  (run-specs true))
+  (let [ts-file   (timestamp-file)
+        timestamp (modified-time ts-file)]
+    (timestamp! ts-file)
+    ;; MDM - Touch the js output file so the browser will reload it without hard refresh.
+    (timestamp! (io/file (:output-to @build-config)))
+    (run-specs :auto? true :timestamp timestamp)))
 
 (deftype Sources [build-options]
   Inputs
@@ -144,7 +151,7 @@
       (assoc options :watch-fn (util/resolve-var watch-fn-sym)))
     options))
 
-(defn- configure! [config build-key]
+(defn configure! [config build-key]
   (when-let [env (:run-env config)] (reset! run-env env))
   (reset! ns-prefix (:ns-prefix config "i.forgot.to.add.ns-prefix.to.cljs.edn"))
   (reset! ignore-errors (map re-pattern (:ignore-errors config [])))
@@ -176,8 +183,8 @@
       (util/establish-path (:output-to @build-config))
       (io/delete-file ".specljs-timestamp" true))
     (cond (= "once" command) (do (api/build (Sources. @build-config) @build-config)
-                                 (when (:specs @build-config) (run-specs false)))
-          (= "spec" command) (run-specs false)
+                                 (when (:specs @build-config) (run-specs)))
+          (= "spec" command) (run-specs)
           :else (let [timestamp (timestamp-file)]
                   (println "watching namespaces with prefix:" @ns-prefix)
                   (when (.exists timestamp) (.delete timestamp))
