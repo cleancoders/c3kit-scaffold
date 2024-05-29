@@ -144,22 +144,33 @@
       (assoc options :watch-fn (util/resolve-var watch-fn-sym)))
     options))
 
+(defn- configure! [config build-key]
+  (when-let [env (:run-env config)] (reset! run-env env))
+  (reset! ns-prefix (:ns-prefix config "i.forgot.to.add.ns-prefix.to.cljs.edn"))
+  (reset! ignore-errors (map re-pattern (:ignore-errors config [])))
+  (reset! ignore-consoles (map re-pattern (:ignore-console config [])))
+  (reset! build-config (resolve-watch-fn (get config build-key))))
+
+(defn- ->command [args]
+  (let [command (or (first args) "auto")]
+    (assert (#{"once" "auto" "spec"} command)
+            (str "Unrecognized build command: " command ". Must be 'once', 'auto', or 'spec'"))
+    command))
+
+(defn- ->build-key [config]
+  (keyword (apply app/find-env (or (:env-keys config) app/env-keys))))
+
 (defn -main
   "Compile clojure script and run specs.
   args can be empty or have the type of command:
     auto (default)  - watch files and recompiling and re-running affected specs
     once            - compile and run specs (if enabled) once
-    spec            - just run the specs (assums compilcation is already done)"
+    spec            - just run the specs (assumes compilation is already done)"
   [& args]
-  (let [command   (or (first args) "auto")
+  (let [command   (->command args)
         config    (util/read-edn-resource "config/cljs.edn")
-        build-key (keyword (apply app/find-env (or (:env-keys config) app/env-keys)))]
-    (when-let [env (:run-env config)] (reset! run-env env))
-    (reset! ns-prefix (:ns-prefix config "i.forgot.to.add.ns-prefix.to.cljs.edn"))
-    (reset! ignore-errors (map re-pattern (:ignore-errors config [])))
-    (reset! ignore-consoles (map re-pattern (:ignore-console config [])))
-    (reset! build-config (resolve-watch-fn (get config build-key)))
-    (assert (#{"once" "auto" "spec"} command) (str "Unrecognized build command: " command ". Must be 'once', 'auto', or 'spec'"))
+        build-key (->build-key config)]
+    (configure! config build-key)
     (when-not (= "spec" command)
       (println "Compiling ClojureScript:" command build-key)
       (util/establish-path (:output-to @build-config))
