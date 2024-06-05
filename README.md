@@ -7,6 +7,8 @@ A library component of [c3kit - Clean Coders Clojure Kit](https://github.com/cle
 _"Truth forever on the scaffold, Wrong forever on the throne,—
 Yet that scaffold sways the future"_ - James Russell Lowell
 
+[![Scaffold Build](https://github.com/cleancoders/c3kit-scaffold/actions/workflows/test.yml/badge.svg)](https://github.com/cleancoders/c3kit-scaffold/actions/workflows/test.yml)
+
 Use Scaffold to build your cljs and css (garden).
 
 * __cljs.clj__ : task to compile clojurescript
