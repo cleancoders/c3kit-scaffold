@@ -17,6 +17,10 @@
 (defonce ns-prefix (atom nil))
 (defonce ignore-errors (atom []))
 (defonce ignore-consoles (atom []))
+(defonce errors (atom []))
+
+(defonce red "\u001B[31m")
+(defonce default-color "\u001b[0m")
 
 (deftype FnConsumer [accept-fn]
   Consumer
@@ -116,9 +120,14 @@
       (.printStackTrace e)
       (System/exit 1))))
 
+(defn- with-red [s]
+  (str red s default-color))
+
 (defn on-error [error]
   (when-not (some #(re-find % error) @ignore-errors)
-    (println "ERROR:" error)))
+    (let [msg (with-red (str "ERROR: " error))]
+      (swap! errors conj msg)
+      (println msg))))
 
 (defn on-console [m]
   (let [^ConsoleMessage message m
@@ -139,9 +148,13 @@
     (if auto?
       (run-specs-auto page timestamp)
       (run-specs-once page))
-    (.close browser)))
+    (.close browser)
+    (when (seq @errors)
+      (println (with-red "Some specs may not be running because errors were found:"))
+      (run! println @errors))))
 
 (defn on-dev-compiled []
+  (reset! errors [])
   (let [ts-file   (timestamp-file)
         timestamp (modified-time ts-file)]
     (timestamp! ts-file)

@@ -22,11 +22,14 @@
                            :output-dir "tmp"
                            :output-to  "tmp/out.cljs"}})
 
+(def default-color "\u001b[0m")
+(def red "\u001B[31m")
+
 (describe "CLJS Compilation"
   (with-stubs)
 
-  (redefs-around [println       ccc/noop
-                  api/build     (stub :cljs/build)
+  (redefs-around [println ccc/noop
+                  api/build (stub :cljs/build)
                   sut/run-specs (stub :run-specs)])
 
   (before (.mkdir (io/file "tmp"))
@@ -43,30 +46,56 @@
 
     (it "writes javascript output path"
       (sut/configure! config :development)
-      (let [html       (sut/build-spec-html)
-            js-path    (str (.toURL (.toURI (io/file "tmp/out.cljs"))))
+      (let [html (sut/build-spec-html)
+            js-path (str (.toURL (.toURI (io/file "tmp/out.cljs"))))
             script-tag (str "script src=\"" js-path "\"")]
         (should-contain script-tag html)))
 
     (it "writes spec config"
       (sut/configure! config :development)
-      (let [html   (sut/build-spec-html)
+      (let [html (sut/build-spec-html)
             config "run_specs(\"color\", true, \"reporters\", [\"documentation\"], \"tags\", [\"~one\",\"two\"])"]
         (should-contain config html)))
 
     (it "color is nil"
       (sut/configure! config :no-color)
-      (let [html   (sut/build-spec-html)
+      (let [html (sut/build-spec-html)
             config "run_specs(\"color\", null, \"reporters\", [\"documentation\"])"]
         (should-contain config html)))
 
     (it "defaults to color true and documentation reporter"
       (sut/configure! config :defaults)
-      (let [html   (sut/build-spec-html)
+      (let [html (sut/build-spec-html)
             config "run_specs(\"color\", true, \"reporters\", [\"documentation\"])"]
         (should-contain config html)))
 
     )
+
+  (context "on-error"
+    (before (reset! sut/errors []))
+    (redefs-around [println (stub :println)])
+
+    (it "prints error if not ignored"
+      (sut/on-error "this is an error")
+      (should-have-invoked :println {:with [(str red "ERROR: this is an error" default-color)]})
+      (sut/on-error "another error")
+      (should-have-invoked :println {:with [(str red "ERROR: another error" default-color)]}))
+
+    (it "doesn't print error if ignored"
+      (swap! sut/ignore-errors conj #"hello")
+      (sut/on-error "hello")
+      (should-not-have-invoked :println)
+      (swap! sut/ignore-errors conj #"greetings")
+      (sut/on-error " greetings")
+      (sut/on-error "hello")
+      (sut/on-error "bye")
+      (should-have-invoked :println {:with [(str red "ERROR: bye" default-color)]}))
+
+    (it "saves error"
+      (sut/on-error "this is an error")
+      (should= [(str red "ERROR: this is an error" default-color)] @sut/errors)
+      (sut/on-error "errors are cool")
+      (should= [(str red "ERROR: this is an error" default-color) (str red "ERROR: errors are cool" default-color)] @sut/errors)))
 
   (context "on-dev-compiled"
 
@@ -86,13 +115,18 @@
         (sut/on-dev-compiled)
         (should-not= 1234 (.lastModified ts-file))
         (should-have-invoked :run-specs {:with [:auto? true :timestamp 1234]})))
-    )
+
+    (it "resets error atom"
+      (reset! sut/errors ["Hello"])
+      (sut/configure! config :development)
+      (sut/on-dev-compiled)
+      (should= [] @sut/errors)))
 
   (context "main"
     (redefs-around [util/read-edn-resource (constantly config)
-                    util/establish-path    (stub :establish-path)
-                    io/delete-file         (stub :delete-file)
-                    sut/auto-run           (stub :auto-run)])
+                    util/establish-path (stub :establish-path)
+                    io/delete-file (stub :delete-file)
+                    sut/auto-run (stub :auto-run)])
 
     (it "runs once"
       (sut/-main "once")
