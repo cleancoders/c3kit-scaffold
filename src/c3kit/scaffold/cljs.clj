@@ -102,6 +102,16 @@
        (map #(str/replace % "_" "-"))
        (reduce #(assoc %1 %2 true) {})))
 
+(defn- with-red [s]
+  (str red s default-color))
+
+(defn print-error-summary [{:keys [exit-if-errors?] :as settings}]
+  (when (seq @errors)
+    (println (with-red "Some specs may not be running because errors were found:"))
+    (run! println @errors)
+    (if exit-if-errors?
+      (System/exit 1))))
+
 (defn run-specs-auto [page timestamp]
   (let [deps     (.evaluate page "goog.debugLoader_")
         rdeps    (build-reverse-deps deps)
@@ -111,11 +121,14 @@
       (do (println "Only running affected specs:")
           (doseq [ns (sort (keys spec-map))] (println "  " ns))
           (.evaluate page js))
-      (println "No specs affected. Skipping run."))))
+      (println "No specs affected. Skipping run."))
+    (print-error-summary {:exit-if-errors? false})))
 
 (defn run-specs-once [page]
   (try
-    (System/exit (.evaluate page "runSpecsFiltered(null)"))
+    (let [status (.evaluate page "runSpecsFiltered(null)")]
+      (print-error-summary {:exit-if-errors? true})
+      (System/exit status))
     (catch Exception e
       (.printStackTrace e)
       (System/exit 1))))
@@ -148,10 +161,7 @@
     (if auto?
       (run-specs-auto page timestamp)
       (run-specs-once page))
-    (.close browser)
-    (when (seq @errors)
-      (println (with-red "Some specs may not be running because errors were found:"))
-      (run! println @errors))))
+    (.close browser)))
 
 (defn on-dev-compiled []
   (reset! errors [])
