@@ -1,9 +1,11 @@
 (ns c3kit.scaffold.css.sample
   (:refer-clojure :exclude [rem])
   (:require
-    [garden.def :as garden]
-    [garden.units :as units]
-    ))
+   [c3kit.apron.util :as util]
+   [clojure.java.shell :as shell]
+   [garden.def :as garden]
+   [garden.units :as units]
+   ))
 
 ; MDM - This is just some sample garden code to make sure it compiles alright.
 
@@ -53,3 +55,11 @@
           :line-height      (rem 1.35)
           }]
   )
+
+
+(defn on-css-compiled [config]
+  (let [extra-css "target/extra-css/extra-css.css"
+        output-file (:output-file config)]
+    (util/establish-path extra-css)
+    (println "copying " output-file " -> " extra-css)
+    (shell/sh "cp" "-r" output-file extra-css)))

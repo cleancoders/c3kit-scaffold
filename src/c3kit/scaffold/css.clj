@@ -15,6 +15,10 @@
      (println (str ~tag ": " (/ (double (- (. System (nanoTime)) start#)) 1000000000.0) " secs"))
      ret#))
 
+(defn on-dev-compiled [config]
+  (when-let [on-css-compiled (:on-css-compiled config)]
+    (on-css-compiled config)))
+
 (defn- generate-css [config]
   (let [output  (:output-file config)
         css-var (util/resolve-var (:var config))
@@ -24,6 +28,7 @@
 
 (defn- generate [config]
   (print-exec-time "generating css" (generate-css config))
+  (on-dev-compiled config)
   (println))
 
 (defn handle-error [error]
@@ -51,6 +56,13 @@
           (Thread/sleep 1000)
           (recur tracker mod-time))))))
 
+(defn resolve-on-css-compiled [options]
+  (if-let [on-compiled-sym (:on-css-compiled options)]
+    (do
+      (when-not (symbol? on-compiled-sym) (throw (Exception. ":on-css-compiled must be a fully qualified symbol")))
+      (assoc options :on-css-compiled (util/resolve-var on-compiled-sym)))
+    options))
+
 (defn- ->once-or-auto [args]
   (let [once-or-auto (or (first args) "auto")]
     (assert (#{"once" "auto"} once-or-auto) (str "Unrecognized build frequency: " once-or-auto ". Must be 'once' or 'auto'"))
@@ -58,7 +70,7 @@
 
 (defn -main [& args]
   (let [once-or-auto (->once-or-auto args)
-        config       (util/read-edn-resource "config/css.edn")]
+        config       (-> (util/read-edn-resource "config/css.edn") resolve-on-css-compiled)]
     (util/establish-path (:output-file config))
     (println "Compiling CSS:" once-or-auto)
     (if (= "once" once-or-auto)
