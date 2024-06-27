@@ -193,12 +193,18 @@
       (assoc options :watch-fn (util/resolve-var watch-fn-sym)))
     options))
 
+(defn- resolve-build-config [config build-key]
+  (let [result (get config build-key)]
+    (when (nil? result)
+      (throw (ex-info (str "build-key `" build-key "` missing from config") config)))
+    result))
+
 (defn configure! [config build-key]
   (when-let [env (:run-env config)] (reset! run-env env))
   (reset! ns-prefix (:ns-prefix config "i.forgot.to.add.ns-prefix.to.cljs.edn"))
   (reset! ignore-errors (map re-pattern (:ignore-errors config [])))
   (reset! ignore-consoles (map re-pattern (:ignore-console config [])))
-  (reset! build-config (resolve-watch-fn (get config build-key))))
+  (reset! build-config (resolve-watch-fn (resolve-build-config config build-key))))
 
 (defn- ->command [args]
   (let [command (or (first args) "auto")]
