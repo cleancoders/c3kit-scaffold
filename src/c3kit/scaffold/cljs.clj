@@ -110,7 +110,7 @@
     (println (with-red "Some specs may not be running because errors were found:"))
     (run! println @errors)
     (if exit-if-errors?
-      (System/exit 1))))
+      (System/exit -1))))
 
 (defn run-specs-auto [page timestamp]
   (let [deps     (.evaluate page "goog.debugLoader_")
@@ -131,7 +131,7 @@
       (System/exit status))
     (catch Exception e
       (.printStackTrace e)
-      (System/exit 1))))
+      (System/exit -1))))
 
 (defn- with-red [s]
   (str red s default-color))
