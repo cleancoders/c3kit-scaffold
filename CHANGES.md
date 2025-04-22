@@ -1,6 +1,7 @@
-### Next
+### 2.2.0
  * Upgrades deps
  * Replaces noprompt/garden with lambdaisland/garden
+ * Apron 2.2.0
 
 ### 2.0.5
  * bump apron
