@@ -1,3 +1,7 @@
+### 2.3.0
+ * Replaces lambdaisland/garden with io.github.brandoncorrea/garden
+   * Fixes CSS compressions around `calc()`
+
 ### 2.2.0
  * Upgrades deps
  * Replaces noprompt/garden with lambdaisland/garden
