@@ -2,7 +2,7 @@
  :paths   ["src"]
  :deps    {
            com.cleancoders.c3kit/apron         {:mvn/version "2.4.2"}
-           com.lambdaisland/garden             {:mvn/version "1.7.590"}
+           io.github.brandoncorrea/garden      {:mvn/version "1.9.0"}
            com.microsoft.playwright/playwright {:mvn/version "1.56.0"}
            org.clojure/clojure                 {:mvn/version "1.12.3"}
            org.clojure/tools.namespace         {:mvn/version "1.5.0"}
