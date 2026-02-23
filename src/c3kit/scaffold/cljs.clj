@@ -18,6 +18,7 @@
 (defonce ignore-errors (atom []))
 (defonce ignore-consoles (atom []))
 (defonce errors (atom []))
+(defonce running (volatile! true))
 
 (defonce red "\u001B[31m")
 (defonce default-color "\u001b[0m")
@@ -148,20 +149,24 @@
     (when-not (some #(re-find % text) @ignore-consoles)
       (println text))))
 
+(defn create-pw-resources []
+  (let [pw      (Playwright/create)
+        browser (-> pw (.chromium) (.launch))
+        page    (-> browser (.newContext) (.newPage))]
+    {:playwright pw :browser browser :page page}))
+
 (defn run-specs [& {:keys [timestamp auto?]}]
-  (let [browser (-> (Playwright/create)
-                    (.chromium)
-                    (.launch))
-        page    (-> browser
-                    (.newContext)
-                    (.newPage))]
-    (.onPageError page (FnConsumer. on-error))
-    (.onConsoleMessage page (FnConsumer. on-console))
-    (.navigate page (spec-html-url))
-    (if auto?
-      (run-specs-auto page timestamp)
-      (run-specs-once page))
-    (.close browser)))
+  (let [{:keys [playwright browser page]} (create-pw-resources)]
+    (try
+      (.onPageError page (FnConsumer. on-error))
+      (.onConsoleMessage page (FnConsumer. on-console))
+      (.navigate page (spec-html-url))
+      (if auto?
+        (run-specs-auto page timestamp)
+        (run-specs-once page))
+      (finally
+        (.close browser)
+        (.close playwright)))))
 
 (defn on-dev-compiled []
   (reset! errors [])
@@ -179,12 +184,21 @@
   (-compile [_ opts] (mapcat #(cljs.closure/compile-dir (io/file %) opts) (:sources build-options)))
   (-find-sources [_ opts] (mapcat #(cljs.closure/-find-sources % opts) (:sources build-options))))
 
+(defn shutdown! [main-thread]
+  (vreset! running false)
+  (.interrupt main-thread))
+
+(defn install-shutdown-hook! []
+  (let [main-thread (Thread/currentThread)]
+    (.addShutdownHook (Runtime/getRuntime)
+      (Thread. #(shutdown! main-thread)))))
+
 (defn auto-run [build-options]
-  (while true
+  (while @running
     (try
       (api/watch (Sources. build-options) build-options)
       (catch Exception e
-        (.printStackTrace e)))))
+        (when @running (.printStackTrace e))))))
 
 (defn- resolve-watch-fn [options]
   (if-let [watch-fn-sym (:watch-fn options)]
@@ -236,4 +250,5 @@
           :else (let [timestamp (timestamp-file)]
                   (println "watching namespaces with prefix:" @ns-prefix)
                   (when (.exists timestamp) (.delete timestamp))
+                  (install-shutdown-hook!)
                   (auto-run @build-config)))))

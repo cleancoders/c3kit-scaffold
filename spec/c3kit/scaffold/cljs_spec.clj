@@ -5,7 +5,8 @@
             [cljs.build.api :as api]
             [clojure.java.io :as io]
             [speclj.core :refer :all])
-  (:import (java.lang AssertionError)))
+  (:import (com.microsoft.playwright Browser Page Playwright)
+           (java.lang AssertionError)))
 
 (def config {:run-cmd     "command"
              :run-env     "environment"
@@ -37,7 +38,8 @@
           (reset! sut/run-env {})
           (reset! sut/ns-prefix nil)
           (reset! sut/ignore-errors [])
-          (reset! sut/ignore-consoles []))
+          (reset! sut/ignore-consoles [])
+          (vreset! sut/running true))
 
   (after (io/delete-file "tmp/out.cljs" true)
          (io/delete-file "tmp/.specljs-timestamp" true))
@@ -126,7 +128,8 @@
     (redefs-around [util/read-edn-resource (constantly config)
                     util/establish-path (stub :establish-path)
                     io/delete-file (stub :delete-file)
-                    sut/auto-run (stub :auto-run)])
+                    sut/auto-run (stub :auto-run)
+                    sut/install-shutdown-hook! (stub :install-hook)])
 
     (it "runs once"
       (sut/-main "once")
@@ -155,5 +158,77 @@
     (it "must be once or auto"
       (let [message "Assert failed: Unrecognized build command: foo. Must be 'once', 'auto', or 'spec'\n(#{\"once\" \"spec\" \"auto\"} command)"]
         (should-throw AssertionError message (sut/-main "foo"))))
+
+    (it "installs shutdown hook in auto mode"
+      (sut/-main "auto")
+      (should-have-invoked :install-hook))
     )
+
+  (context "auto-run"
+    (redefs-around [api/watch (stub :api/watch {:invoke (fn [& _] (vreset! sut/running false))})])
+    (before (vreset! sut/running true))
+    (after (vreset! sut/running true))
+
+    (it "exits immediately when not running"
+      (vreset! sut/running false)
+      (sut/auto-run {})
+      (should-not-have-invoked :api/watch))
+
+    (it "stops looping when running becomes false"
+      (sut/auto-run {})
+      (should-have-invoked :api/watch {:times 1})))
+
+  (context "shutdown!"
+    (before (vreset! sut/running true))
+    (after (vreset! sut/running true)
+           (Thread/interrupted))
+
+    (it "sets running to false"
+      (sut/shutdown! (Thread/currentThread))
+      (should= false @sut/running))
+
+    (it "interrupts the given thread"
+      (Thread/interrupted)
+      (sut/shutdown! (Thread/currentThread))
+      (should (.isInterrupted (Thread/currentThread)))))
   )
+
+(describe "run-specs resource cleanup"
+  (with-stubs)
+  (redefs-around [println ccc/noop])
+
+  (it "closes both browser and playwright"
+    (let [pw-closed?      (atom false)
+          browser-closed? (atom false)
+          mock-page       (reify Page
+                            (onPageError [_ _])
+                            (onConsoleMessage [_ _])
+                            (navigate [_ _]))
+          mock-browser    (reify Browser
+                            (close [_] (reset! browser-closed? true)))
+          mock-pw         (reify Playwright
+                            (close [_] (reset! pw-closed? true)))]
+      (with-redefs [sut/create-pw-resources (constantly {:playwright mock-pw :browser mock-browser :page mock-page})
+                    sut/run-specs-auto (stub :specs-auto)
+                    sut/spec-html-url (constantly "file:///tmp/specs.html")]
+        (sut/run-specs :auto? true :timestamp 0)
+        (should= true @browser-closed?)
+        (should= true @pw-closed?))))
+
+  (it "closes both even when an exception occurs"
+    (let [pw-closed?      (atom false)
+          browser-closed? (atom false)
+          mock-page       (reify Page
+                            (onPageError [_ _])
+                            (onConsoleMessage [_ _])
+                            (navigate [_ _]))
+          mock-browser    (reify Browser
+                            (close [_] (reset! browser-closed? true)))
+          mock-pw         (reify Playwright
+                            (close [_] (reset! pw-closed? true)))]
+      (with-redefs [sut/create-pw-resources (constantly {:playwright mock-pw :browser mock-browser :page mock-page})
+                    sut/run-specs-auto (fn [& _] (throw (Exception. "boom")))
+                    sut/spec-html-url (constantly "file:///tmp/specs.html")]
+        (should-throw Exception (sut/run-specs :auto? true :timestamp 0))
+        (should= true @browser-closed?)
+        (should= true @pw-closed?)))))
