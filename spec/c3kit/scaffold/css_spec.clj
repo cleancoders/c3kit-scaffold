@@ -2,6 +2,8 @@
   (:require [c3kit.apron.corec :as ccc]
             [c3kit.apron.util :as util]
             [c3kit.scaffold.css :as sut]
+            [clojure.tools.namespace.dir :as track]
+            [clojure.tools.namespace.reload :as reload]
             [speclj.core :refer :all])
   (:import (java.lang AssertionError)))
 
@@ -11,11 +13,45 @@
   (with-stubs)
   (redefs-around [println ccc/noop])
 
+  (context "shutdown!"
+    (before (vreset! sut/running true))
+    (after (vreset! sut/running true)
+           (Thread/interrupted))
+
+    (it "sets running to false"
+      (sut/shutdown! (Thread/currentThread))
+      (should= false @sut/running))
+
+    (it "interrupts the given thread"
+      (Thread/interrupted)
+      (sut/shutdown! (Thread/currentThread))
+      (should (.isInterrupted (Thread/currentThread))))
+    )
+
+  (context "auto-generate"
+    (redefs-around [track/scan (stub :scan {:return {}})
+                    reload/track-reload (stub :reload {:return {}})
+                    sut/generate (stub :generate)])
+    (before (vreset! sut/running true))
+    (after (vreset! sut/running true))
+
+    (it "exits immediately when not running"
+      (vreset! sut/running false)
+      (sut/auto-generate config)
+      (should-not-have-invoked :scan))
+
+    (it "stops looping when running becomes false"
+      (with-redefs [track/scan (stub :scan {:invoke (fn [& _] (vreset! sut/running false) {})})]
+        (sut/auto-generate config)
+        (should-have-invoked :scan {:times 1})))
+    )
+
   (context "main"
-    (redefs-around [sut/generate           (stub :generate)
-                    sut/auto-generate      (stub :auto-generate)
-                    util/read-edn-resource (constantly config)
-                    util/establish-path    (stub :establish-path)])
+    (redefs-around [sut/generate              (stub :generate)
+                    sut/auto-generate         (stub :auto-generate)
+                    sut/install-shutdown-hook! (stub :install-hook)
+                    util/read-edn-resource    (constantly config)
+                    util/establish-path       (stub :establish-path)])
 
     (it "compiles css once"
       (sut/-main "once")
@@ -36,6 +72,10 @@
     (it "must be once or auto"
       (let [message "Assert failed: Unrecognized build frequency: foo. Must be 'once' or 'auto'\n(#{\"once\" \"auto\"} once-or-auto)"]
         (should-throw AssertionError message (sut/-main "foo"))))
+
+    (it "installs shutdown hook in auto mode"
+      (sut/-main "auto")
+      (should-have-invoked :install-hook))
     )
 
   )

@@ -8,6 +8,17 @@
     [garden.core :as garden]
     ))
 
+(defonce running (volatile! true))
+
+(defn shutdown! [main-thread]
+  (vreset! running false)
+  (.interrupt main-thread))
+
+(defn install-shutdown-hook! []
+  (let [main-thread (Thread/currentThread)]
+    (.addShutdownHook (Runtime/getRuntime)
+      (Thread. #(shutdown! main-thread)))))
+
 (defmacro print-exec-time
   [tag expr]
   `(let [start# (. System (nanoTime))
@@ -41,20 +52,21 @@
 
 (defn auto-generate [config]
   (loop [tracker {} last-mod-time 0]
-    (let [tracker  (track/scan tracker (:source-dir config))
-          mod-time (:clojure.tools.namespace.dir/time tracker 0)
-          change?  (> mod-time last-mod-time)
-          to-load  (seq (:clojure.tools.namespace.track/load tracker))]
-      (if (and change? to-load)
-        (let [_       (println "reloading: " to-load)
-              tracker (print-exec-time "reloading time" (reload/track-reload tracker))]
-          (if-let [error (:clojure.tools.namespace.reload/error tracker)]
-            (handle-error error)
-            (generate config))
-          (recur tracker mod-time))
-        (do
-          (Thread/sleep 1000)
-          (recur tracker mod-time))))))
+    (when @running
+      (let [tracker  (track/scan tracker (:source-dir config))
+            mod-time (:clojure.tools.namespace.dir/time tracker 0)
+            change?  (> mod-time last-mod-time)
+            to-load  (seq (:clojure.tools.namespace.track/load tracker))]
+        (if (and change? to-load)
+          (let [_       (println "reloading: " to-load)
+                tracker (print-exec-time "reloading time" (reload/track-reload tracker))]
+            (if-let [error (:clojure.tools.namespace.reload/error tracker)]
+              (handle-error error)
+              (generate config))
+            (recur tracker mod-time))
+          (do
+            (try (Thread/sleep 1000) (catch InterruptedException _))
+            (recur tracker mod-time)))))))
 
 (defn resolve-on-css-compiled [options]
   (if-let [on-compiled-sym (:on-css-compiled options)]
@@ -75,4 +87,5 @@
     (println "Compiling CSS:" once-or-auto)
     (if (= "once" once-or-auto)
       (generate config)
-      (auto-generate config))))
+      (do (install-shutdown-hook!)
+          (auto-generate config)))))

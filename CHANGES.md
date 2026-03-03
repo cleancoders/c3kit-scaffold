@@ -1,3 +1,6 @@
+### 2.3.2
+ * Add shutdown hook to the CSS runner as well to stop orphaned processes
+ 
 ### 2.3.1
  * Fixes bug that caused orphaned processes when running as a sub-process, e.g. when run with Claude Code and the Claude Code session ends without killing the processes it spawned.
    * Kill Playwright instance in run-specs, not just browser
