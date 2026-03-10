@@ -193,6 +193,17 @@
     (.addShutdownHook (Runtime/getRuntime)
       (Thread. #(shutdown! main-thread)))))
 
+(defn monitor-stdin! []
+  (let [main-thread (Thread/currentThread)]
+    (doto (Thread.
+            (fn []
+              (try
+                (while (not= -1 (.read System/in)))
+                (catch Exception _))
+              (shutdown! main-thread)))
+      (.setDaemon true)
+      (.start))))
+
 (defn auto-run [build-options]
   (while @running
     (try
@@ -251,4 +262,5 @@
                   (println "watching namespaces with prefix:" @ns-prefix)
                   (when (.exists timestamp) (.delete timestamp))
                   (install-shutdown-hook!)
+                  (monitor-stdin!)
                   (auto-run @build-config)))))

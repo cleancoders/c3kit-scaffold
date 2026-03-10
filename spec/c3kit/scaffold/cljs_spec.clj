@@ -129,7 +129,8 @@
                     util/establish-path (stub :establish-path)
                     io/delete-file (stub :delete-file)
                     sut/auto-run (stub :auto-run)
-                    sut/install-shutdown-hook! (stub :install-hook)])
+                    sut/install-shutdown-hook! (stub :install-hook)
+                    sut/monitor-stdin! (stub :monitor-stdin)])
 
     (it "runs once"
       (sut/-main "once")
@@ -162,6 +163,10 @@
     (it "installs shutdown hook in auto mode"
       (sut/-main "auto")
       (should-have-invoked :install-hook))
+
+    (it "monitors stdin in auto mode"
+      (sut/-main "auto")
+      (should-have-invoked :monitor-stdin))
     )
 
   (context "auto-run"
@@ -191,6 +196,22 @@
       (Thread/interrupted)
       (sut/shutdown! (Thread/currentThread))
       (should (.isInterrupted (Thread/currentThread)))))
+
+  (context "monitor-stdin!"
+    (before (vreset! sut/running true))
+    (after (vreset! sut/running true)
+           (Thread/interrupted))
+
+    (it "calls shutdown when stdin closes"
+      (let [original-in System/in
+            empty-stream (java.io.ByteArrayInputStream. (byte-array 0))]
+        (try
+          (System/setIn empty-stream)
+          (with-redefs [sut/shutdown! (stub :shutdown)]
+            (sut/monitor-stdin!)
+            (Thread/sleep 100)
+            (should-have-invoked :shutdown))
+          (finally (System/setIn original-in))))))
   )
 
 (describe "run-specs resource cleanup"

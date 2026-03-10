@@ -28,6 +28,23 @@
       (should (.isInterrupted (Thread/currentThread))))
     )
 
+  (context "monitor-stdin!"
+    (before (vreset! sut/running true))
+    (after (vreset! sut/running true)
+           (Thread/interrupted))
+
+    (it "calls shutdown when stdin closes"
+      (let [original-in System/in
+            empty-stream (java.io.ByteArrayInputStream. (byte-array 0))]
+        (try
+          (System/setIn empty-stream)
+          (with-redefs [sut/shutdown! (stub :shutdown)]
+            (sut/monitor-stdin!)
+            (Thread/sleep 100)
+            (should-have-invoked :shutdown))
+          (finally (System/setIn original-in)))))
+    )
+
   (context "auto-generate"
     (redefs-around [track/scan (stub :scan {:return {}})
                     reload/track-reload (stub :reload {:return {}})
@@ -50,6 +67,7 @@
     (redefs-around [sut/generate              (stub :generate)
                     sut/auto-generate         (stub :auto-generate)
                     sut/install-shutdown-hook! (stub :install-hook)
+                    sut/monitor-stdin!        (stub :monitor-stdin)
                     util/read-edn-resource    (constantly config)
                     util/establish-path       (stub :establish-path)])
 
@@ -76,6 +94,10 @@
     (it "installs shutdown hook in auto mode"
       (sut/-main "auto")
       (should-have-invoked :install-hook))
+
+    (it "monitors stdin in auto mode"
+      (sut/-main "auto")
+      (should-have-invoked :monitor-stdin))
     )
 
   )
