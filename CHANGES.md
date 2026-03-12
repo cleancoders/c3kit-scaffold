@@ -1,5 +1,13 @@
 ### 2.3.3
  * Monitor stdin in both CLJS and CSS for auto shutdown to prevent orphaned/stale processes
+ * Update deps - all non-breaking changes either minor or patch
+   * c3kit-apron 2.4.2 -> 2.5.0
+   * Playwright 1.56.0 -> 1.58.0
+   * Clojure 1.12.3 -> 1.12.4
+   * Clojure/tools.namespace 1.5.0 -> 1.5.1
+   * Test deps
+     * io.github.clojure/tools.build 0.10.11 -> 0.10.12
+     * ClojureSCript 1.12.42 -> 1.12.134
 
 ### 2.3.2
  * Add shutdown hook to the CSS runner as well to stop orphaned processes
