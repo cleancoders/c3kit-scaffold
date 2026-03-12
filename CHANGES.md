@@ -1,3 +1,6 @@
+### 2.3.3
+ * Monitor stdin in both CLJS and CSS for auto shutdown to prevent orphaned/stale processes
+
 ### 2.3.2
  * Add shutdown hook to the CSS runner as well to stop orphaned processes
  

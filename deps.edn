@@ -1,17 +1,17 @@
 {
  :paths   ["src"]
  :deps    {
-           com.cleancoders.c3kit/apron         {:mvn/version "2.4.2"}
+           com.cleancoders.c3kit/apron         {:mvn/version "2.5.0"}
            io.github.brandoncorrea/garden      {:mvn/version "1.9.0"}
-           com.microsoft.playwright/playwright {:mvn/version "1.56.0"}
-           org.clojure/clojure                 {:mvn/version "1.12.3"}
-           org.clojure/tools.namespace         {:mvn/version "1.5.0"}
+           com.microsoft.playwright/playwright {:mvn/version "1.58.0"}
+           org.clojure/clojure                 {:mvn/version "1.12.4"}
+           org.clojure/tools.namespace         {:mvn/version "1.5.1"}
            }
  :aliases {
            :test  {:extra-deps  {
                                  clj-commons/pomegranate       {:mvn/version "1.2.25"}
-                                 io.github.clojure/tools.build {:mvn/version "0.10.11"}
-                                 org.clojure/clojurescript     {:mvn/version "1.12.42"}
+                                 io.github.clojure/tools.build {:mvn/version "0.10.12"}
+                                 org.clojure/clojurescript     {:mvn/version "1.12.134"}
                                  speclj/speclj                 {:mvn/version "3.12.0"}
                                  }
                    ;:override-deps {com.cleancoders.c3kit/apron {:local/root "../apron"}}
