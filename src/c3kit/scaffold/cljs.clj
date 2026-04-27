@@ -206,7 +206,9 @@
     (try
       (api/watch (Sources. build-options) build-options)
       (catch Exception e
-        (when @running (.printStackTrace e))))))
+        (if @running
+          (.printStackTrace e)
+          (println "auto-run: ignoring exception during shutdown:" (.getMessage e)))))))
 
 (defn- resolve-watch-fn [options]
   (if-let [watch-fn-sym (:watch-fn options)]

@@ -192,7 +192,16 @@
 
     (it "stops looping when running becomes false"
       (sut/auto-run {})
-      (should-have-invoked :api/watch {:times 1})))
+      (should-have-invoked :api/watch {:times 1}))
+
+    (it "logs a one-line note when an exception is swallowed during shutdown"
+      (let [logged (atom [])]
+        (with-redefs [api/watch (fn [& _]
+                                  (vreset! sut/running false)
+                                  (throw (Exception. "boom")))
+                      println    (fn [& args] (swap! logged conj (apply str args)))]
+          (sut/auto-run {})
+          (should (some #(re-find #"auto-run: ignoring exception during shutdown" %) @logged))))))
 
   (context "shutdown!"
     (before (vreset! sut/running true))
