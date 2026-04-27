@@ -251,7 +251,7 @@
     (when-not (= "spec" command)
       (println "Compiling ClojureScript:" command build-key)
       (util/establish-path (:output-to @build-config))
-      (io/delete-file ".specljs-timestamp" true))
+      (io/delete-file (timestamp-file) true))
     (cond (= "once" command) (do (api/build (Sources. @build-config) @build-config)
                                  (when (:specs @build-config) (run-specs)))
           (= "spec" command) (run-specs)
