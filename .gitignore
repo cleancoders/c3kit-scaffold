@@ -12,3 +12,4 @@ package-lock.json
 *.iml
 .DS_Store
 .env
+.worktrees/
