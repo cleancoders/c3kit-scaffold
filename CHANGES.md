@@ -28,7 +28,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Brittle assertion-message tests in `cljs_spec.clj` and `css_spec.clj` now match by regex prefix.
 - `:build` and `:test` aliases agree on `tools.build 0.10.12`.
 
-## [2.3.3] - 2026-04-XX
+## [2.3.3] - 2026-03-12
 
 ### Changed
 

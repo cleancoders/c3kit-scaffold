@@ -31,4 +31,4 @@ clojure -M:test:cljs once # ClojureScript tests (requires Playwright)
 
 ## Code of Conduct
 
-This project follows the [Clean Coders Code of Conduct](./CODE_OF_CONDUCT.md). By participating you agree to abide by it.
+This project follows the [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). By participating you agree to abide by it.
