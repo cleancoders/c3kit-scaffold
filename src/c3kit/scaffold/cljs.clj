@@ -134,9 +134,6 @@
       (.printStackTrace e)
       (System/exit -1))))
 
-(defn- with-red [s]
-  (str red s default-color))
-
 (defn on-error [error]
   (when-not (some #(re-find % error) @ignore-errors)
     (let [msg (with-red (str "ERROR: " error))]
