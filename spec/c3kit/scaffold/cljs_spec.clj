@@ -167,9 +167,9 @@
       (sut/-main)
       (should-have-invoked :auto-run))
 
-    (it "must be once or auto"
-      (let [message "Assert failed: Unrecognized build command: foo. Must be 'once', 'auto', or 'spec'\n(#{\"once\" \"spec\" \"auto\"} command)"]
-        (should-throw AssertionError message (sut/-main "foo"))))
+    (it "must be once, auto, or spec"
+      (should-throw AssertionError #"Unrecognized build command: foo"
+                    (sut/-main "foo")))
 
     (it "installs shutdown hook in auto mode"
       (sut/-main "auto")
