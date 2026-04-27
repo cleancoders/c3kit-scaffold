@@ -45,7 +45,7 @@
           :jar-file  jar-file}))
 
 (defn tag [_]
-  (let [clean? (str/blank? (:out (shell/sh "git" "diff")))
+  (let [clean? (str/blank? (:out (shell/sh "git" "status" "--porcelain")))
         tags   (delay (->> (shell/sh "git" "tag") :out str/split-lines set))]
     (cond (not clean?) (do (println "ABORT: commit master before tagging") (System/exit 1))
           (contains? @tags version) (println "tag already exists")
