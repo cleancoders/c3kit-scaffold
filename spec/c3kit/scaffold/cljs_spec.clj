@@ -11,6 +11,7 @@
 (def config {:run-cmd     "command"
              :run-env     "environment"
              :env-keys    ["ENV" ".env"]
+             :ns-prefix   "test.ns"
              :development {:output-dir "tmp"
                            :output-to  "tmp/out.cljs"
                            :specs      {:color     true
@@ -72,6 +73,16 @@
         (should-contain config html)))
 
     )
+
+  (context "configure!"
+    (it "throws when :ns-prefix is missing"
+      (let [bad-config (dissoc config :ns-prefix)]
+        (should-throw clojure.lang.ExceptionInfo #":ns-prefix"
+          (sut/configure! bad-config :development))))
+
+    (it "sets ns-prefix from config"
+      (sut/configure! config :development)
+      (should= "test.ns" @sut/ns-prefix)))
 
   (context "on-error"
     (before (reset! sut/errors []))

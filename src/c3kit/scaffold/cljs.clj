@@ -223,7 +223,9 @@
 
 (defn configure! [config build-key]
   (when-let [env (:run-env config)] (reset! run-env env))
-  (reset! ns-prefix (:ns-prefix config "i.forgot.to.add.ns-prefix.to.cljs.edn"))
+  (when-not (:ns-prefix config)
+    (throw (ex-info ":ns-prefix is required in config/cljs.edn" {:config config})))
+  (reset! ns-prefix (:ns-prefix config))
   (reset! ignore-errors (map re-pattern (:ignore-errors config [])))
   (reset! ignore-consoles (map re-pattern (:ignore-console config [])))
   (reset! build-config (resolve-watch-fn (resolve-build-config config build-key))))
