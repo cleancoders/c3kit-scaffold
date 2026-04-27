@@ -10,16 +10,26 @@
 
 (defonce running (volatile! true))
 
-(defn shutdown! [main-thread]
+(defn shutdown!
+  "Sets `running` to false and interrupts the given thread to break out
+  of the auto-generate loop."
+  [main-thread]
   (vreset! running false)
   (.interrupt main-thread))
 
-(defn install-shutdown-hook! []
+(defn install-shutdown-hook!
+  "Registers a JVM shutdown hook so SIGTERM/SIGINT cleanly stops the
+  auto-generate loop."
+  []
   (let [main-thread (Thread/currentThread)]
     (.addShutdownHook (Runtime/getRuntime)
       (Thread. #(shutdown! main-thread)))))
 
-(defn monitor-stdin! []
+(defn monitor-stdin!
+  "Spawns a daemon thread that reads stdin until EOF and then calls
+  `shutdown!`. Stops orphaned CSS watchers when the parent process
+  exits."
+  []
   (let [main-thread (Thread/currentThread)]
     (doto (Thread.
             (fn []
@@ -37,7 +47,10 @@
      (println (str ~tag ": " (/ (double (- (. System (nanoTime)) start#)) 1000000000.0) " secs"))
      ret#))
 
-(defn on-dev-compiled [config]
+(defn on-dev-compiled
+  "If the config supplies an `:on-css-compiled` callback, invokes it with
+  the resolved config map after each successful compilation."
+  [config]
   (when-let [on-css-compiled (:on-css-compiled config)]
     (on-css-compiled config)))
 
@@ -53,7 +66,10 @@
   (on-dev-compiled config)
   (println))
 
-(defn handle-error [error]
+(defn handle-error
+  "Pretty-prints a Throwable raised during namespace reload so that watch
+  mode keeps running."
+  [error]
   (let [{:keys [cause via]} (Throwable->map error)]
     (println "ERROR ---------------------------------------------")
     (println "Cause: " cause)
@@ -61,7 +77,11 @@
     (println "---------------------------------------------------")
     (println)))
 
-(defn auto-generate [config]
+(defn auto-generate
+  "Watches `:source-dir` for changes via tools.namespace, reloads any
+  changed namespaces, and regenerates CSS. Loops while `running` is
+  true."
+  [config]
   (loop [tracker {} last-mod-time 0]
     (when @running
       (let [tracker  (track/scan tracker (:source-dir config))
@@ -91,7 +111,12 @@
     (assert (#{"once" "auto"} once-or-auto) (str "Unrecognized build frequency: " once-or-auto ". Must be 'once' or 'auto'"))
     once-or-auto))
 
-(defn -main [& args]
+(defn -main
+  "Compile Garden CSS and optionally watch for changes.
+  args:
+    once  - compile once and exit
+    auto  - compile, then watch the source-dir and recompile on change (default)"
+  [& args]
   (let [once-or-auto (->once-or-auto args)
         config       (-> (util/read-edn-resource "config/css.edn") resolve-on-css-compiled)]
     (util/establish-path (:output-file config))
