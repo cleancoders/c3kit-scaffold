@@ -110,7 +110,7 @@
   (when (seq @errors)
     (println (with-red "Some specs may not be running because errors were found:"))
     (run! println @errors)
-    (if exit-if-errors?
+    (when exit-if-errors?
       (System/exit -1))))
 
 (defn run-specs-auto [page timestamp]
