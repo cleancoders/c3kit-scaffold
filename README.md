@@ -22,7 +22,7 @@ See [`CHANGES.md`](./CHANGES.md) for release history.
 Add Scaffold to `deps.edn`:
 
 ```clojure
-com.cleancoders.c3kit/scaffold {:mvn/version "2.3.3"}
+com.cleancoders.c3kit/scaffold {:mvn/version "2.3.4"}
 ```
 
 Requires JDK 21 or newer (the bundled `closure-compiler` requires JDK 21).
