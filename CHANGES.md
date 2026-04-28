@@ -15,7 +15,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - README rewritten for consumers: install snippet, usage, configuration reference, and a separated Development section.
 - `:ns-prefix` is now required in `config/cljs.edn`; missing it throws instead of using a sentinel.
-- CI now exercises CLJS specs and CSS compilation across JDK 17 and 21 via a matrix; Clojure CLI installs via `DeLaGuardo/setup-clojure`.
+- CI now exercises CLJS specs and CSS compilation on JDK 21 (the floor required by the bundled `closure-compiler`); Clojure CLI installs via `DeLaGuardo/setup-clojure`.
 - `auto-run` logs a one-line note when an exception is dropped during shutdown.
 - `dev/build.clj`'s `tag` task uses `git status --porcelain` to detect uncommitted changes.
 

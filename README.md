@@ -25,7 +25,7 @@ Add Scaffold to `deps.edn`:
 com.cleancoders.c3kit/scaffold {:mvn/version "2.3.3"}
 ```
 
-Requires JDK 17 or newer.
+Requires JDK 21 or newer (the bundled `closure-compiler` requires JDK 21).
 
 ## Usage
 
