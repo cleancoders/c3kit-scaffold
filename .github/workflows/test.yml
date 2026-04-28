@@ -40,7 +40,7 @@ jobs:
         run: clojure -P -M:test
 
       - name: Install Playwright browsers
-        run: clojure -M:test -m com.microsoft.playwright.CLI install --with-deps chromium
+        run: java -cp "$(clojure -A:test -Spath)" com.microsoft.playwright.CLI install --with-deps chromium
 
       - name: Run JVM tests
         run: clojure -M:test:spec
