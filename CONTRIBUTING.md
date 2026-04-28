@@ -20,14 +20,19 @@ clojure -M:test:spec      # JVM tests
 clojure -M:test:cljs once # ClojureScript tests (requires Playwright)
 ```
 
+## Workflow
+
+**All pull requests must be linked to an open issue.** PRs without a linked issue will be auto-closed without review by the [`require-linked-issue`](./.github/workflows/require-linked-issue.yml) workflow. Open (or find) an issue first, get a thumbs-up from a maintainer, then start work. This protects everyone's time — yours and ours.
+
 ## Submitting a pull request
 
-1. Open an issue first if the change is non-trivial — it's faster to align on direction before code lands.
+1. Open or find an issue describing the bug or proposed change. Wait for maintainer acknowledgement before starting work.
 2. Branch from `master`.
 3. Add or update tests for any behavior change. We use [Speclj](https://github.com/slagyr/speclj) and follow TDD (red → green → refactor).
 4. Run the full test suite before pushing.
-5. Keep commits small and well-described. Reference the issue number in the commit message when applicable.
-6. Update `CHANGES.md` under an "Unreleased" heading describing the user-visible change.
+5. Keep commits small and well-described.
+6. Update `CHANGES.md` under the current `[Unreleased]` (or current version) heading describing the user-visible change.
+7. Reference the issue with `Closes #N` (or `Fixes #N`/`Resolves #N`) in your PR description so the linked-issue check passes and the issue auto-closes on merge.
 
 ## Code of Conduct
 
