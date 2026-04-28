@@ -110,7 +110,7 @@
   (when (seq @errors)
     (println (with-red "Some specs may not be running because errors were found:"))
     (run! println @errors)
-    (if exit-if-errors?
+    (when exit-if-errors?
       (System/exit -1))))
 
 (defn run-specs-auto [page timestamp]
@@ -134,9 +134,6 @@
       (.printStackTrace e)
       (System/exit -1))))
 
-(defn- with-red [s]
-  (str red s default-color))
-
 (defn on-error [error]
   (when-not (some #(re-find % error) @ignore-errors)
     (let [msg (with-red (str "ERROR: " error))]
@@ -155,7 +152,13 @@
         page    (-> browser (.newContext) (.newPage))]
     {:playwright pw :browser browser :page page}))
 
-(defn run-specs [& {:keys [timestamp auto?]}]
+(defn run-specs
+  "Launches Playwright, navigates to the generated specs.html, and runs the
+  ClojureScript Speclj suite. With `:auto? true`, only specs affected by
+  changes since `:timestamp` are run; otherwise, runs the full suite and
+  exits the JVM with the Speclj status code. Always closes browser and
+  Playwright resources on exit."
+  [& {:keys [timestamp auto?]}]
   (let [{:keys [playwright browser page]} (create-pw-resources)]
     (try
       (.onPageError page (FnConsumer. on-error))
@@ -168,7 +171,11 @@
         (.close browser)
         (.close playwright)))))
 
-(defn on-dev-compiled []
+(defn on-dev-compiled
+  "Watch-fn callback for ClojureScript auto-compilation. Resets the error
+  atom, touches the `.specljs-timestamp` file, touches the JS output file
+  so the browser reloads it, then re-runs only the affected specs."
+  []
   (reset! errors [])
   (let [ts-file   (timestamp-file)
         timestamp (modified-time ts-file)]
@@ -184,16 +191,27 @@
   (-compile [_ opts] (mapcat #(cljs.closure/compile-dir (io/file %) opts) (:sources build-options)))
   (-find-sources [_ opts] (mapcat #(cljs.closure/-find-sources % opts) (:sources build-options))))
 
-(defn shutdown! [main-thread]
+(defn shutdown!
+  "Sets `running` to false and interrupts the given thread. Used by both
+  the JVM shutdown hook and the stdin monitor to stop the auto-run loop."
+  [main-thread]
   (vreset! running false)
   (.interrupt main-thread))
 
-(defn install-shutdown-hook! []
+(defn install-shutdown-hook!
+  "Registers a JVM shutdown hook that calls `shutdown!` on the current
+  thread, so `kill`/Ctrl-C/parent-process-exit gracefully stops the
+  auto-run loop."
+  []
   (let [main-thread (Thread/currentThread)]
     (.addShutdownHook (Runtime/getRuntime)
       (Thread. #(shutdown! main-thread)))))
 
-(defn monitor-stdin! []
+(defn monitor-stdin!
+  "Spawns a daemon thread that reads stdin until EOF, then calls
+  `shutdown!`. Prevents orphaned subprocesses when the parent process
+  closes stdin (e.g. agent harnesses that don't propagate signals)."
+  []
   (let [main-thread (Thread/currentThread)]
     (doto (Thread.
             (fn []
@@ -204,12 +222,19 @@
       (.setDaemon true)
       (.start))))
 
-(defn auto-run [build-options]
+(defn auto-run
+  "Runs `cljs.build.api/watch` in a loop while the `running` volatile is
+  true. Exceptions thrown by `api/watch` are printed and the loop restarts;
+  exceptions raised after a shutdown signal are logged briefly and dropped
+  to keep shutdown clean."
+  [build-options]
   (while @running
     (try
       (api/watch (Sources. build-options) build-options)
       (catch Exception e
-        (when @running (.printStackTrace e))))))
+        (if @running
+          (.printStackTrace e)
+          (println "auto-run: ignoring exception during shutdown:" (.getMessage e)))))))
 
 (defn- resolve-watch-fn [options]
   (if-let [watch-fn-sym (:watch-fn options)]
@@ -224,9 +249,18 @@
       (throw (ex-info (str "build-key `" build-key "` missing from config") config)))
     result))
 
-(defn configure! [config build-key]
+(defn configure!
+  "Reads the EDN config map and the chosen build-key (e.g. :development) and
+  populates the runtime atoms (`build-config`, `run-env`, `ns-prefix`,
+  `ignore-errors`, `ignore-consoles`). Throws via `resolve-build-config` if
+  the build-key is missing, and throws if `:ns-prefix` is missing.
+
+  Called once from `-main` before compilation."
+  [config build-key]
   (when-let [env (:run-env config)] (reset! run-env env))
-  (reset! ns-prefix (:ns-prefix config "i.forgot.to.add.ns-prefix.to.cljs.edn"))
+  (when-not (:ns-prefix config)
+    (throw (ex-info ":ns-prefix is required in config/cljs.edn" {:config config})))
+  (reset! ns-prefix (:ns-prefix config))
   (reset! ignore-errors (map re-pattern (:ignore-errors config [])))
   (reset! ignore-consoles (map re-pattern (:ignore-console config [])))
   (reset! build-config (resolve-watch-fn (resolve-build-config config build-key))))
@@ -254,7 +288,7 @@
     (when-not (= "spec" command)
       (println "Compiling ClojureScript:" command build-key)
       (util/establish-path (:output-to @build-config))
-      (io/delete-file ".specljs-timestamp" true))
+      (io/delete-file (timestamp-file) true))
     (cond (= "once" command) (do (api/build (Sources. @build-config) @build-config)
                                  (when (:specs @build-config) (run-specs)))
           (= "spec" command) (run-specs)

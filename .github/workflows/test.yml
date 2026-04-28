@@ -9,26 +9,44 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ '21' ]
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up JDK 21
+      - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v5
         with:
-          java-version: 21
+          java-version: ${{ matrix.java }}
           distribution: 'temurin'
 
-      - name: Cache Clojure Dependencies
+      - name: Install Clojure CLI
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          cli: 'latest'
+
+      - name: Cache Clojure dependencies
         uses: actions/cache@v4
         with:
-          path: ~/.m2
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/deps.edn') }}
-          restore-keys: |
-            ${{ runner.os }}-deps-
+          path: |
+            ~/.m2
+            ~/.gitlibs
+          key: ${{ runner.os }}-deps-${{ hashFiles('deps.edn') }}
+          restore-keys: ${{ runner.os }}-deps-
 
-      - name: Install Clojure CLI
-        run: curl -O https://download.clojure.org/install/linux-install-1.11.1.1119.sh && chmod +x linux-install-1.11.1.1119.sh && sudo ./linux-install-1.11.1.1119.sh
+      - name: Pre-fetch Clojure deps
+        run: clojure -P -M:test
 
-      - name: Run Clojure Tests
+      - name: Install Playwright browsers
+        run: java -cp "$(clojure -A:test -Spath)" com.microsoft.playwright.CLI install --with-deps chromium
+
+      - name: Run JVM tests
         run: clojure -M:test:spec
+
+      - name: Run ClojureScript tests
+        run: clojure -M:test:cljs once
+
+      - name: Compile CSS
+        run: clojure -M:test:css once

@@ -88,8 +88,8 @@
       (should-have-invoked :auto-generate {:with [config]}))
 
     (it "must be once or auto"
-      (let [message "Assert failed: Unrecognized build frequency: foo. Must be 'once' or 'auto'\n(#{\"once\" \"auto\"} once-or-auto)"]
-        (should-throw AssertionError message (sut/-main "foo"))))
+      (should-throw AssertionError #"Unrecognized build frequency: foo"
+                    (sut/-main "foo")))
 
     (it "installs shutdown hook in auto mode"
       (sut/-main "auto")

@@ -11,6 +11,7 @@
 (def config {:run-cmd     "command"
              :run-env     "environment"
              :env-keys    ["ENV" ".env"]
+             :ns-prefix   "test.ns"
              :development {:output-dir "tmp"
                            :output-to  "tmp/out.cljs"
                            :specs      {:color     true
@@ -72,6 +73,16 @@
         (should-contain config html)))
 
     )
+
+  (context "configure!"
+    (it "throws when :ns-prefix is missing"
+      (let [bad-config (dissoc config :ns-prefix)]
+        (should-throw clojure.lang.ExceptionInfo #":ns-prefix"
+          (sut/configure! bad-config :development))))
+
+    (it "sets ns-prefix from config"
+      (sut/configure! config :development)
+      (should= "test.ns" @sut/ns-prefix)))
 
   (context "on-error"
     (before (reset! sut/errors []))
@@ -137,7 +148,7 @@
       (should= "environment" @sut/run-env)
       (should= (:development config) @sut/build-config)
       (should-have-invoked :establish-path {:with ["tmp/out.cljs"]})
-      (should-have-invoked :delete-file {:with [".specljs-timestamp" true]})
+      (should-have-invoked :delete-file {:with [(io/file "tmp" ".specljs-timestamp") true]})
       (should-have-invoked :cljs/build)
       (should-have-invoked :run-specs {:with []})
       (should-not-have-invoked :auto-run))
@@ -147,7 +158,7 @@
       (should= "environment" @sut/run-env)
       (should= (:development config) @sut/build-config)
       (should-have-invoked :establish-path {:with ["tmp/out.cljs"]})
-      (should-have-invoked :delete-file {:with [".specljs-timestamp" true]})
+      (should-have-invoked :delete-file {:with [(io/file "tmp" ".specljs-timestamp") true]})
       (should-have-invoked :auto-run {:with [@sut/build-config]})
       (should-not-have-invoked :cljs/build)
       (should-not-have-invoked :run-specs))
@@ -156,9 +167,9 @@
       (sut/-main)
       (should-have-invoked :auto-run))
 
-    (it "must be once or auto"
-      (let [message "Assert failed: Unrecognized build command: foo. Must be 'once', 'auto', or 'spec'\n(#{\"once\" \"spec\" \"auto\"} command)"]
-        (should-throw AssertionError message (sut/-main "foo"))))
+    (it "must be once, auto, or spec"
+      (should-throw AssertionError #"Unrecognized build command: foo"
+                    (sut/-main "foo")))
 
     (it "installs shutdown hook in auto mode"
       (sut/-main "auto")
@@ -181,7 +192,16 @@
 
     (it "stops looping when running becomes false"
       (sut/auto-run {})
-      (should-have-invoked :api/watch {:times 1})))
+      (should-have-invoked :api/watch {:times 1}))
+
+    (it "logs a one-line note when an exception is swallowed during shutdown"
+      (let [logged (atom [])]
+        (with-redefs [api/watch (fn [& _]
+                                  (vreset! sut/running false)
+                                  (throw (Exception. "boom")))
+                      println    (fn [& args] (swap! logged conj (apply str args)))]
+          (sut/auto-run {})
+          (should (some #(re-find #"auto-run: ignoring exception during shutdown" %) @logged))))))
 
   (context "shutdown!"
     (before (vreset! sut/running true))
