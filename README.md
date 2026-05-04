@@ -6,6 +6,7 @@ A library component of [c3kit — Clean Coders Clojure Kit](https://github.com/c
 
 [![Scaffold Build](https://github.com/cleancoders/c3kit-scaffold/actions/workflows/test.yml/badge.svg)](https://github.com/cleancoders/c3kit-scaffold/actions/workflows/test.yml)
 [![Clojars Project](https://img.shields.io/clojars/v/com.cleancoders.c3kit/scaffold.svg)](https://clojars.org/com.cleancoders.c3kit/scaffold)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > _"Truth forever on the scaffold, Wrong forever on the throne, —
 > Yet that scaffold sways the future"_ — James Russell Lowell
@@ -120,7 +121,10 @@ clj -M:test:cljs once
 clj -M:test:cljs       # auto-runner
 ```
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for branch conventions, test requirements, and how to file issues.
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for branch conventions, test
+requirements, and how to file issues. This project follows the
+[Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). Security issues
+should be reported privately — see [SECURITY.md](./SECURITY.md).
 
 ## Deployment
 

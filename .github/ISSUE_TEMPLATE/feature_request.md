@@ -1,13 +1,18 @@
 ---
 name: Feature request
-about: Suggest a new capability
+about: Suggest an enhancement to Scaffold
+title: ''
 labels: enhancement
 ---
 
-**Problem you're trying to solve**
+## Problem
+What problem does this solve? Who benefits?
 
-**Proposed solution**
+## Proposed solution
+Sketch the API or behavior you'd like.
 
-**Alternatives considered**
+## Alternatives considered
+Other approaches you thought about.
 
-**Additional context**
+## Additional context
+Anything else relevant.
