@@ -4,6 +4,8 @@
 /lib
 /target
 /tmp
+.clj-kondo/.cache
+.clj-kondo/imports
 .cpcache
 .idea
 node_modules
