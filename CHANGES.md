@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.5] - 2026-07-16
+
+### Security
+
+- Pinned transitive dependencies to patch two HIGH-severity CVEs surfaced by clj-watson:
+  - `jackson-core` → 2.22.1 (CVE-2025-52999, via `apron` → `transit-clj`).
+  - `plexus-utils` → 4.0.3 (CVE-2025-67030, via `garden`).
+- Removed `secrets: inherit` from the security workflow call; the reusable workflow needs only the auto-provided `GITHUB_TOKEN`.
+- Pinned all GitHub Actions to full commit SHAs (mutable-tag supply-chain hardening).
+
+### Changed
+
+- Added security scanning (clj-watson, semgrep, gitleaks, clj-kondo, clj-holmes, shellcheck) via the central reusable workflow, with clj-watson and semgrep set to block on findings.
+- Merged the separate build and security workflows into a single `ci.yml` with parallel `test` and `security` jobs.
+- Bumped CI actions to Node 24 releases (`actions/cache` 6.1.0, `setup-clojure` 13.6.1); removed the single-value JDK matrix.
+
 ## [2.3.4] - 2026-04-28
 
 ### Added
