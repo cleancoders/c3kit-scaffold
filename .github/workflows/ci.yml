@@ -1,4 +1,4 @@
-name: Scaffold Build
+name: CI
 
 on:
   push:
@@ -50,3 +50,10 @@ jobs:
 
       - name: Compile CSS
         run: clojure -M:test:css once
+
+  security:
+    uses: cleancoders/github-actions/.github/workflows/security.yml@v1
+    with:
+      src-paths: "src"
+      clj-watson-blocking: true
+      semgrep-blocking: true
