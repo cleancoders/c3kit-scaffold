@@ -1,9 +1,8 @@
 (ns c3kit.scaffold.prime-factors-spec
-  (:require-macros [speclj.core :refer [describe before context it should should= should-contain should-not-contain
-                                        with-stubs stub should-have-invoked should-not-have-invoked xit should-not=]])
+  (:require-macros [speclj.core :refer [describe it should=]])
   (:require
-    [c3kit.scaffold.prime-factors :refer [prime-factors-of]]
-    [speclj.core]))
+   [c3kit.scaffold.prime-factors :refer [prime-factors-of]]
+   [speclj.core]))
 
 (defn mersenne [n]
   (int (dec (Math/pow 2 n))))
@@ -30,7 +29,6 @@
   (check (* 2 3 5 7 11 17 37) [2 3 5 7 11 17 37])
   (check (mersenne 17) [(mersenne 17)])
   (check (mersenne 19) [(mersenne 19)])
-  (check (mersenne 31) [(mersenne 31)])
-  )
+  (check (mersenne 31) [(mersenne 31)]))
 
 

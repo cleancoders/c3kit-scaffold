@@ -1,11 +1,12 @@
 (ns c3kit.scaffold.cljs
   (:require
-    [c3kit.apron.app :as app]
-    [c3kit.apron.util :as util]
-    [c3kit.apron.utilc :as utilc]
-    [cljs.build.api :as api]
-    [clojure.java.io :as io]
-    [clojure.string :as str])
+   [c3kit.apron.app :as app]
+   [c3kit.apron.util :as util]
+   [c3kit.apron.utilc :as utilc]
+   [cljs.build.api :as api]
+   [cljs.closure]
+   [clojure.java.io :as io]
+   [clojure.string :as str])
   (:import (cljs.closure Compilable Inputs)
            (com.microsoft.playwright ConsoleMessage Playwright)
            (java.io File)
@@ -33,8 +34,8 @@
 
 (defn config-with-defaults [config]
   (cond-> speclj-defaults
-          (map? config)
-          (merge config)))
+    (map? config)
+    (merge config)))
 
 (defn build-spec-config []
   (->> (config-with-defaults (:specs @build-config))
@@ -56,21 +57,21 @@
       (spit spec-html-file (build-spec-html)))
     (str (.toURL spec-html-file))))
 
-(defn project-ns? [ns] (str/starts-with? ns @ns-prefix))
+(defn project-ns? [ns-id] (str/starts-with? ns-id @ns-prefix))
 
 (defn build-reverse-deps [deps]
   (let [ns->file     (get deps "idToPath_")
         project-nses (filter project-ns? (keys ns->file))
         rdeps        (reduce #(assoc %1 %2 #{}) {} project-nses)]
-    (reduce (fn [result ns]
-              (let [file             (get-in deps ["idToPath_" ns])
+    (reduce (fn [result ns-id]
+              (let [file             (get-in deps ["idToPath_" ns-id])
                     requires         (get-in deps ["dependencies_" file "requires"])
                     project-requires (filter project-ns? requires)]
-                (reduce (fn [result rdep] (update result rdep (fn [ns-set] (set (conj ns-set ns)))))
+                (reduce (fn [result rdep] (update result rdep (fn [ns-set] (set (conj ns-set ns-id)))))
                         result project-requires)))
             rdeps project-nses)))
 
-(defn ^File timestamp-file []
+(defn timestamp-file ^File []
   (let [output-dir (:output-dir @build-config)]
     (io/file output-dir ".specljs-timestamp")))
 
@@ -86,8 +87,8 @@
 
 (defn find-updated-specs [rdeps deps timestamp]
   (let [ns->file (get deps "idToPath_")]
-    (filter (fn [ns] (let [mod-time (-> (get ns->file ns) URL. .toURI File. .lastModified)]
-                       (> mod-time timestamp)))
+    (filter (fn [ns-id] (let [mod-time (-> (get ns->file ns-id) URL. .toURI File. .lastModified)]
+                          (> mod-time timestamp)))
             (keys rdeps))))
 
 (defn rdeps-affected-by [rdeps updated]
@@ -106,7 +107,7 @@
 (defn- with-red [s]
   (str red s default-color))
 
-(defn print-error-summary [{:keys [exit-if-errors?] :as settings}]
+(defn print-error-summary [{:keys [exit-if-errors?]}]
   (when (seq @errors)
     (println (with-red "Some specs may not be running because errors were found:"))
     (run! println @errors)
@@ -120,7 +121,7 @@
         js       (str "runSpecsFiltered(" (utilc/->json spec-map) ")")]
     (if (seq spec-map)
       (do (println "Only running affected specs:")
-          (doseq [ns (sort (keys spec-map))] (println "  " ns))
+          (doseq [ns-id (sort (keys spec-map))] (println "  " ns-id))
           (.evaluate page js))
       (println "No specs affected. Skipping run."))
     (print-error-summary {:exit-if-errors? false})))
@@ -205,7 +206,7 @@
   []
   (let [main-thread (Thread/currentThread)]
     (.addShutdownHook (Runtime/getRuntime)
-      (Thread. #(shutdown! main-thread)))))
+                      (Thread. #(shutdown! main-thread)))))
 
 (defn monitor-stdin!
   "Spawns a daemon thread that reads stdin until EOF, then calls
@@ -214,11 +215,11 @@
   []
   (let [main-thread (Thread/currentThread)]
     (doto (Thread.
-            (fn []
-              (try
-                (while (not= -1 (.read System/in)))
-                (catch Exception _))
-              (shutdown! main-thread)))
+           (fn []
+             (try
+               (while (not= -1 (.read System/in)))
+               (catch Exception _))
+             (shutdown! main-thread)))
       (.setDaemon true)
       (.start))))
 

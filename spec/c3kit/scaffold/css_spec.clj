@@ -25,8 +25,7 @@
     (it "interrupts the given thread"
       (Thread/interrupted)
       (sut/shutdown! (Thread/currentThread))
-      (should (.isInterrupted (Thread/currentThread))))
-    )
+      (should (.isInterrupted (Thread/currentThread)))))
 
   (context "monitor-stdin!"
     (before (vreset! sut/running true))
@@ -42,8 +41,7 @@
             (sut/monitor-stdin!)
             (Thread/sleep 100)
             (should-have-invoked :shutdown))
-          (finally (System/setIn original-in)))))
-    )
+          (finally (System/setIn original-in))))))
 
   (context "auto-generate"
     (redefs-around [track/scan (stub :scan {:return {}})
@@ -60,8 +58,7 @@
     (it "stops looping when running becomes false"
       (with-redefs [track/scan (stub :scan {:invoke (fn [& _] (vreset! sut/running false) {})})]
         (sut/auto-generate config)
-        (should-have-invoked :scan {:times 1})))
-    )
+        (should-have-invoked :scan {:times 1}))))
 
   (context "main"
     (redefs-around [sut/generate              (stub :generate)
@@ -97,7 +94,4 @@
 
     (it "monitors stdin in auto mode"
       (sut/-main "auto")
-      (should-have-invoked :monitor-stdin))
-    )
-
-  )
+      (should-have-invoked :monitor-stdin))))

@@ -57,28 +57,26 @@
     (it "writes spec config"
       (sut/configure! config :development)
       (let [html (sut/build-spec-html)
-            config "run_specs(\"color\", true, \"reporters\", [\"documentation\"], \"tags\", [\"~one\",\"two\"])"]
-        (should-contain config html)))
+            expected "run_specs(\"color\", true, \"reporters\", [\"documentation\"], \"tags\", [\"~one\",\"two\"])"]
+        (should-contain expected html)))
 
     (it "color is nil"
       (sut/configure! config :no-color)
       (let [html (sut/build-spec-html)
-            config "run_specs(\"color\", null, \"reporters\", [\"documentation\"])"]
-        (should-contain config html)))
+            expected "run_specs(\"color\", null, \"reporters\", [\"documentation\"])"]
+        (should-contain expected html)))
 
     (it "defaults to color true and documentation reporter"
       (sut/configure! config :defaults)
       (let [html (sut/build-spec-html)
-            config "run_specs(\"color\", true, \"reporters\", [\"documentation\"])"]
-        (should-contain config html)))
-
-    )
+            expected "run_specs(\"color\", true, \"reporters\", [\"documentation\"])"]
+        (should-contain expected html))))
 
   (context "configure!"
     (it "throws when :ns-prefix is missing"
       (let [bad-config (dissoc config :ns-prefix)]
         (should-throw clojure.lang.ExceptionInfo #":ns-prefix"
-          (sut/configure! bad-config :development))))
+                      (sut/configure! bad-config :development))))
 
     (it "sets ns-prefix from config"
       (sut/configure! config :development)
@@ -177,8 +175,7 @@
 
     (it "monitors stdin in auto mode"
       (sut/-main "auto")
-      (should-have-invoked :monitor-stdin))
-    )
+      (should-have-invoked :monitor-stdin)))
 
   (context "auto-run"
     (redefs-around [api/watch (stub :api/watch {:invoke (fn [& _] (vreset! sut/running false))})])
@@ -231,8 +228,7 @@
             (sut/monitor-stdin!)
             (Thread/sleep 100)
             (should-have-invoked :shutdown))
-          (finally (System/setIn original-in))))))
-  )
+          (finally (System/setIn original-in)))))))
 
 (describe "run-specs resource cleanup"
   (with-stubs)

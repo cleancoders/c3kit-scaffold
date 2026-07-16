@@ -4,8 +4,7 @@
    [c3kit.apron.util :as util]
    [clojure.java.shell :as shell]
    [garden.def :as garden]
-   [garden.units :as units]
-   ))
+   [garden.units :as units]))
 
 ; MDM - This is just some sample garden code to make sure it compiles alright.
 
@@ -15,47 +14,32 @@
 (defn percent [n] (units/percent n))
 
 (defn font-load [face weight]
-  ["@font-face" {
-                 :font-family (str "'" face "-" weight "'")}
+  ["@font-face" {:font-family (str "'" face "-" weight "'")}
    {:src         (str "url('/fonts/" face "-" weight ".woff2') format('woff2'),
                        url('/fonts/" face "-" weight ".woff') format('woff')")
     :font-weight "normal"
-    :font-style  "normal"
-    }]
-  )
+    :font-style  "normal"}])
 
 (defn font-family [face weight]
   (str "'" face "-" weight "', Helvetica, sans-serif"))
 
 (garden/defstyles screen
 
-  [:* :*:before :*:after {
-                          :box-sizing "border-box"
-                          }]
+  [:* :*:before :*:after {:box-sizing "border-box"}]
 
-  ["::selection" {
-                  :background-color "#123"
-                  :color            "#456"
-                  }]
+  ["::selection" {:background-color "#123"
+                  :color            "#456"}]
 
-  [:body :html {
-                :width  "100%"
-                :height "100%"
-                }]
+  [:body :html {:width  "100%"
+                :height "100%"}]
 
-  [:html {
-          :font-size (px 19)
-          }]
+  [:html {:font-size (px 19)}]
 
-  [:body {
-          :background-color "#fff"
+  [:body {:background-color "#fff"
           :color            "#555"
           :font-family      (font-family "groldroundedslim" "extralight")
           :letter-spacing   (px 0.25)
-          :line-height      (rem 1.35)
-          }]
-  )
-
+          :line-height      (rem 1.35)}])
 
 (defn on-css-compiled [config]
   (let [extra-css "target/extra-css/extra-css.css"

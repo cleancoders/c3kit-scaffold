@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.6] - 2026-07-16
+
+### Changed
+
+- Upgraded `apron` 2.5.0 → 3.0.1. Apron 3.0.1 now pins its own `jackson-core`
+  (2.18.6), clearing CVE-2025-52999 at the source, so the scaffold's
+  `jackson-core` exclusion + direct pin from 2.3.5 is no longer needed and was
+  removed. The `plexus-utils` 4.0.3 pin remains (that CVE comes via `garden`,
+  not `apron`). clj-watson reports 0 vulnerable dependencies.
+  - Note: apron 3.0.0 was a major release restructuring the schema ref/registry
+    system into a "lexicon" (breaking). The scaffold itself uses only
+    `apron.util`/`app`/`utilc`/`corec` and is unaffected, but downstream
+    projects that use `apron.schema` refs will need migration.
+- Added `.clj-kondo/config.edn` (security-tuned linter levels + Speclj
+  resolution) and `cljfmt.edn` (Speclj / c3kit indentation). Cleaned up all
+  resulting lint errors and warnings and normalized formatting; the tree now
+  lints clean (0 errors, 0 warnings).
+
 ## [2.3.5] - 2026-07-16
 
 ### Security

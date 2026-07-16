@@ -1,15 +1,14 @@
 {:paths   ["src"]
- :deps    {com.cleancoders.c3kit/apron         {:mvn/version "2.5.0"
-                                                :exclusions  [com.fasterxml.jackson.core/jackson-core]}
+ :deps    {com.cleancoders.c3kit/apron         {:mvn/version "3.0.1"}
            io.github.brandoncorrea/garden      {:mvn/version "1.9.0"
                                                 :exclusions  [org.codehaus.plexus/plexus-utils]}
            com.microsoft.playwright/playwright {:mvn/version "1.58.0"}
            org.clojure/clojure                 {:mvn/version "1.12.4"}
            org.clojure/tools.namespace         {:mvn/version "1.5.1"}
-           ;; Pinned to patch transitive CVEs (see clj-watson):
-           ;; jackson-core CVE-2025-52999 via apron->transit; plexus-utils CVE-2025-67030 via garden
-           com.fasterxml.jackson.core/jackson-core {:mvn/version "2.22.1"}
-           org.codehaus.plexus/plexus-utils        {:mvn/version "4.0.3"}}
+           ;; Pinned to patch transitive CVE (see clj-watson):
+           ;; plexus-utils CVE-2025-67030 via garden. (apron 3.0.1 now pins its own
+           ;; jackson-core, clearing CVE-2025-52999 — no scaffold override needed.)
+           org.codehaus.plexus/plexus-utils    {:mvn/version "4.0.3"}}
  :aliases {:test  {:extra-deps  {clj-commons/pomegranate       {:mvn/version "1.2.25"}
                                  io.github.clojure/tools.build {:mvn/version "0.10.12"}
                                  org.clojure/clojurescript     {:mvn/version "1.12.134"}

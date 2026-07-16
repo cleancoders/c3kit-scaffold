@@ -1,12 +1,11 @@
 (ns c3kit.scaffold.css
   (:require
-    [c3kit.apron.util :as util]
-    [clojure.java.io :as io]
-    [clojure.pprint :refer [pprint]]
-    [clojure.tools.namespace.dir :as track]
-    [clojure.tools.namespace.reload :as reload]
-    [garden.core :as garden]
-    ))
+   [c3kit.apron.util :as util]
+   [clojure.java.io :as io]
+   [clojure.pprint :refer [pprint]]
+   [clojure.tools.namespace.dir :as track]
+   [clojure.tools.namespace.reload :as reload]
+   [garden.core :as garden]))
 
 (defonce running (volatile! true))
 
@@ -23,7 +22,7 @@
   []
   (let [main-thread (Thread/currentThread)]
     (.addShutdownHook (Runtime/getRuntime)
-      (Thread. #(shutdown! main-thread)))))
+                      (Thread. #(shutdown! main-thread)))))
 
 (defn monitor-stdin!
   "Spawns a daemon thread that reads stdin until EOF and then calls
@@ -32,11 +31,11 @@
   []
   (let [main-thread (Thread/currentThread)]
     (doto (Thread.
-            (fn []
-              (try
-                (while (not= -1 (.read System/in)))
-                (catch Exception _))
-              (shutdown! main-thread)))
+           (fn []
+             (try
+               (while (not= -1 (.read System/in)))
+               (catch Exception _))
+             (shutdown! main-thread)))
       (.setDaemon true)
       (.start))))
 
@@ -61,7 +60,7 @@
     (println (str "css: writing " (count css) " bytes to " output))
     (spit (io/file output) css)))
 
-(defn- generate [config]
+(defn generate [config]
   (print-exec-time "generating css" (generate-css config))
   (on-dev-compiled config)
   (println))
