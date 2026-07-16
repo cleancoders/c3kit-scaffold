@@ -7,3 +7,5 @@ jobs:
     uses: cleancoders/github-actions/.github/workflows/security.yml@v1
     with:
       src-paths: "src"
+      clj-watson-blocking: true
+      semgrep-blocking: true
