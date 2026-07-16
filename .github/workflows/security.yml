@@ -7,4 +7,3 @@ jobs:
     uses: cleancoders/github-actions/.github/workflows/security.yml@v1
     with:
       src-paths: "src"
-    secrets: inherit
