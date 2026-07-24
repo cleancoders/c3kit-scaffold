@@ -14,7 +14,12 @@
 ;; reagent.core/with-let is a binding macro shaped like let. Both bare and
 ;; fully-qualified forms are registered so the rule fires regardless of how the
 ;; caller aliases the namespace.
-{:extra-indents
+{;; :function-arguments-indentation :cursive — house standard: wrap function
+ ;; args and ns :require entries two spaces past the enclosing form (Cursive's
+ ;; default), not cljfmt's :community one-space-past-symbol.
+ :function-arguments-indentation :cursive
+
+ :extra-indents
  {describe                  [[:block 1]]
   context                   [[:block 1]]
   it                        [[:block 1]]

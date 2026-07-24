@@ -1,12 +1,12 @@
 (ns c3kit.scaffold.cljs
   (:require
-   [c3kit.apron.app :as app]
-   [c3kit.apron.util :as util]
-   [c3kit.apron.utilc :as utilc]
-   [cljs.build.api :as api]
-   [cljs.closure]
-   [clojure.java.io :as io]
-   [clojure.string :as str])
+    [c3kit.apron.app :as app]
+    [c3kit.apron.util :as util]
+    [c3kit.apron.utilc :as utilc]
+    [cljs.build.api :as api]
+    [cljs.closure]
+    [clojure.java.io :as io]
+    [clojure.string :as str])
   (:import (cljs.closure Compilable Inputs)
            (com.microsoft.playwright ConsoleMessage Playwright)
            (java.io File)
@@ -215,11 +215,11 @@
   []
   (let [main-thread (Thread/currentThread)]
     (doto (Thread.
-           (fn []
-             (try
-               (while (not= -1 (.read System/in)))
-               (catch Exception _))
-             (shutdown! main-thread)))
+            (fn []
+              (try
+                (while (not= -1 (.read System/in)))
+                (catch Exception _))
+              (shutdown! main-thread)))
       (.setDaemon true)
       (.start))))
 

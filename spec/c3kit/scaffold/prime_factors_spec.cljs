@@ -1,8 +1,8 @@
 (ns c3kit.scaffold.prime-factors-spec
   (:require-macros [speclj.core :refer [describe it should=]])
   (:require
-   [c3kit.scaffold.prime-factors :refer [prime-factors-of]]
-   [speclj.core]))
+    [c3kit.scaffold.prime-factors :refer [prime-factors-of]]
+    [speclj.core]))
 
 (defn mersenne [n]
   (int (dec (Math/pow 2 n))))

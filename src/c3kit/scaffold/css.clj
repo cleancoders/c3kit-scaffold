@@ -1,11 +1,11 @@
 (ns c3kit.scaffold.css
   (:require
-   [c3kit.apron.util :as util]
-   [clojure.java.io :as io]
-   [clojure.pprint :refer [pprint]]
-   [clojure.tools.namespace.dir :as track]
-   [clojure.tools.namespace.reload :as reload]
-   [garden.core :as garden]))
+    [c3kit.apron.util :as util]
+    [clojure.java.io :as io]
+    [clojure.pprint :refer [pprint]]
+    [clojure.tools.namespace.dir :as track]
+    [clojure.tools.namespace.reload :as reload]
+    [garden.core :as garden]))
 
 (defonce running (volatile! true))
 
@@ -31,11 +31,11 @@
   []
   (let [main-thread (Thread/currentThread)]
     (doto (Thread.
-           (fn []
-             (try
-               (while (not= -1 (.read System/in)))
-               (catch Exception _))
-             (shutdown! main-thread)))
+            (fn []
+              (try
+                (while (not= -1 (.read System/in)))
+                (catch Exception _))
+              (shutdown! main-thread)))
       (.setDaemon true)
       (.start))))
 
