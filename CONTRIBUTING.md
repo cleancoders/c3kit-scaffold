@@ -34,6 +34,10 @@ clojure -M:test:cljs once # ClojureScript tests (requires Playwright)
 6. Update `CHANGES.md` under the current `[Unreleased]` (or current version) heading describing the user-visible change.
 7. Reference the issue with `Closes #N` (or `Fixes #N`/`Resolves #N`) in your PR description so the linked-issue check passes and the issue auto-closes on merge.
 
+## Deployment
+
+Releases run in CI — see the README's "Deployment" section. Publishing from a local checkout is refused; `clj -T:build deploy` aborts outside GitHub Actions.
+
 ## Code of Conduct
 
 This project follows the [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). By participating you agree to abide by it.
